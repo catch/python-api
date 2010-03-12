@@ -51,16 +51,16 @@ class User(object):
         self.user_name      = user_name
         self.password       = password
 
-    def getUserName(self):
+    def GetUserName(self):
         return self.user_name
 
-    def setUserName(self, user_name):
+    def SetUserName(self, user_name):
         self.user_name = user_name
 
-    def getId(self):
+    def SetId(self):
         return self.id
 
-    def setId(self, id):
+    def SetId(self, id):
         self.id = id
 
 
@@ -88,10 +88,10 @@ class Image(object):
         self.src            = src
         self.data           = data
 
-    def getID(self):
+    def SetID(self):
         return self.id
 
-    def getData(self):
+    def SetData(self):
         return self.data
 
 class Note(object):
@@ -129,48 +129,48 @@ class Note(object):
         self.labels       = labels
         self.location     = location
 
-    def noteHasMedia(self):
+    def NoteHasMedia(self):
         if len(self.media) > 0:
             return True
         return False
 
-    def getCreatedAt(self):
+    def GetCreatedAt(self):
         return self.created_at
 
-    def getModifiedAt(self):
+    def GetModifiedAt(self):
         return self.modified_at
 
-    def getReminderAt(self):
+    def GetReminderAt(self):
         return self.reminder_at
 
-    def getNoteId(self):
+    def GetNoteId(self):
         return self.note_id
 
-    def getText(self):
+    def GetText(self):
         return self.text
 
-    def getSummary(self):
+    def GetSummary(self):
         return self.summary
 
-    def getSource(self):
+    def GetSource(self):
         return self.source
 
-    def getSourceUrl(self):
+    def GetSourceUrl(self):
         return self.source_url
 
-    def getUser(self):
+    def GetUser(self):
         return self.user
 
-    def getChildren(self):
+    def GetChildren(self):
         return self.children
 
-    def getMedia(self):
+    def GetMedia(self):
         return self.media
 
-    def getLabels(self):
+    def GetLabels(self):
         return self.labels
 
-    def getLocation(self):
+    def GetLocation(self):
         return self.location
 
 class Api(object):
@@ -183,7 +183,7 @@ class Api(object):
 
         To fetch users notes:
         >> notes = api.GetNotes()
-        >> print [n.getCreatedAt() for n in notes]
+        >> print [n.GetCreatedAt() for n in notes]
 
         ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
         '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
@@ -217,7 +217,7 @@ class Api(object):
     '''
 
     def __init__(self, username, password=None):
-        self._url    = 'https://snaptic.com/v1/notes.json'
+        self._url    = 'https://api.snaptic.com/v1/notes.json'
         self._urllib = urllib2
         self.SetCredentials(username, password)
 
@@ -235,9 +235,9 @@ class Api(object):
 
     def PostNote(self, note):
          if note:
-            return self._postNote(self._url, note)
+            return self._PostNote(self._url, note)
 
-    def _postNote(self, url, note):
+    def _PostNote(self, url, note):
          if self._username and self._password:
             req = self._urllib.Request(url)
             base64string = base64.encodestring(
@@ -251,12 +251,7 @@ class Api(object):
                 return data
             except IOError, e:
                 if hasattr(e, 'code'):
-                    if e.code != 401:
-                        print 'We got another error'
-                        print e.code
-                    else:
-                        print "error"
-                        print e.headers
+                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
 
     def GetNotes(self):
         jsonNotes = self._FetchUrl(self._url)
@@ -277,12 +272,7 @@ class Api(object):
                 return data
             except IOError, e:
                 if hasattr(e, 'code'):
-                    if e.code != 401:
-                        print 'We got another error'
-                        print e.code
-                    else:
-                        print "error"
-                        print e.headers
+                    raise SnapticError("Error fetching url, http error code: %s: headers %s" % (e.code, e.headers))
 
     def _ParseNotes( self, source ):
         notes      = []
