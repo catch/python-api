@@ -257,6 +257,9 @@ class Api(object):
         jsonNotes = self._FetchUrl(self._url)
         return self._ParseNotes(jsonNotes)
 
+    def GetNotesAsJson(self):
+        return self._FetchUrl(self._url)
+
     def _FetchUrl(self, url):
 
         if self._username and self._password:
