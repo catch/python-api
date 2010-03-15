@@ -16,7 +16,7 @@
 '''A library that provides a python interface to the Snaptic API'''
 
 __author__ = 'harry@p2presearch.com'
-__version__ = '0.1-devel'
+__version__ = '0.2-devel'
 
 import base64
 import httplib
@@ -43,24 +43,40 @@ class User(object):
      The User structure exposes the following properties:
        user.id
        user.user_name
-       user.password
     '''
 
-    def __init__(self, id, user_name, password=None):
+    def __init__(self, id=None, user_name=None):
         self.id             = id
         self.user_name      = user_name
-        self.password       = password
 
     def GetUserName(self):
-        return self.user_name
+        '''
+        Return user_name
+        '''
+        if self.user_name:
+            return self.user_name
+        else:
+            raise SnapticError("Error user name not set")
 
     def SetUserName(self, user_name):
+        '''
+        Set user_name
+        '''
         self.user_name = user_name
 
-    def SetId(self):
-        return self.id
+    def GetId(self):
+        '''
+        Return users id
+        '''
+        if self.id:
+            return self.id
+        else:
+            raise SnapticError("Error user id not set")
 
     def SetId(self, id):
+        '''
+        Set users id
+        '''
         self.id = id
 
 
@@ -88,11 +104,31 @@ class Image(object):
         self.src            = src
         self.data           = data
 
-    def SetID(self):
+    def SetID(self, id):
+        '''
+        Set ID of image.
+        '''
+        self.id = id
+
+    def GetID(self):
+        '''
+        Return ID of image
+        '''
         return self.id
 
-    def SetData(self):
-        return self.data
+    def SetData(self, data):
+        '''
+        Set image data.
+        '''
+        self.data = data
+
+    def GetData(self):
+        '''
+        Return data so that image can be displayed/written to disk as .jpg.
+        If data=None, image data has not yet been fetched.
+        '''
+        if self.data:
+            return data
 
 class Note(object):
     '''A class representing the Note structure used by the Snaptic API.
@@ -165,6 +201,9 @@ class Note(object):
         return self.children
 
     def GetMedia(self):
+        '''
+        Returns list of media associated with note. For now just images.
+        '''
         return self.media
 
     def GetLabels(self):
@@ -213,29 +252,39 @@ class Api(object):
             }   ,
         {"hi":"a little wave"}]}
 
-        There are many other methods, including:
+       To download image data from a note:
+       >> m  = note.GetMedia()
+       >> id = m[0].GetID()
+       >> d = api.GetImageWithId(id)
+       >> filename = "%s.jpg" % id
+       >> fout = open(filename, "wb")
+       >> fout.write(d)
+       >> fout.close()
+
     '''
+    API_VERSION = "v1"
 
     def __init__(self, username, password=None):
-        self._url    = 'https://api.snaptic.com/v1/notes.json'
+        self._url    = 'https://api.snaptic.com/'
         self._urllib = urllib2
         self.SetCredentials(username, password)
 
     def SetCredentials(self, username, password):
         '''
-        Set username/password.
+        Set username/password
 
         Args:
             username: snaptic username
             password: snaptic password
         '''
-        self._userid   = None
+        self._user     = None
         self._username = username
         self._password = password
 
     def PostNote(self, note):
          if note:
-            return self._PostNote(self._url, note)
+            url = self._url + self.API_VERSION + '/notes.json'
+            return self._PostNote(url, note)
 
     def _PostNote(self, url, note):
          if self._username and self._password:
@@ -253,12 +302,30 @@ class Api(object):
                 if hasattr(e, 'code'):
                     raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
 
+    def GetImageWithId(self, id):
+        '''
+        Get image data using the following id
+        '''
+        url = self._url + "viewImage.action?viewNodeId=" + id
+        return self._FetchUrl(url)
+
+    def GetUserId(self):
+        '''
+        Get ID of API user.
+        '''
+        if self._user:
+            return self._user.GetId()
+        else:
+            raise SnapticError("Error user id not set, try calling GetNotes.")
+
     def GetNotes(self):
-        jsonNotes = self._FetchUrl(self._url)
+        url = self._url + self.API_VERSION + "/notes.json"
+        jsonNotes = self._FetchUrl(url)
         return self._ParseNotes(jsonNotes)
 
     def GetNotesAsJson(self):
-        return self._FetchUrl(self._url)
+        url = self._url + self.API_VERSION +  "/notes.json"
+        return self._FetchUrl(url)
 
     def _FetchUrl(self, url):
 
@@ -277,7 +344,7 @@ class Api(object):
                 if hasattr(e, 'code'):
                     raise SnapticError("Error fetching url, http error code: %s: headers %s" % (e.code, e.headers))
 
-    def _ParseNotes( self, source ):
+    def _ParseNotes( self, source, get_image_data=False):
         notes      = []
         jsonNotes  = json.loads(source)
 
@@ -289,7 +356,7 @@ class Api(object):
 
             if 'id' in note:
                 if 'user' in note:
-                    user = User(note['user']['id'], note['user']['user_name'])
+                    self._user = User(note['user']['id'], note['user']['user_name'])
                 if 'location' in note:
                     pass
                 if 'labels' in note:
@@ -299,7 +366,9 @@ class Api(object):
                 if 'media' in note:
                     for item in note['media']:
                         if item['type'] == 'image':
-                            imageData = self._FetchUrl(item['src'])
+                            imageData = None
+                            if get_image_data:
+                                imageData = self._FetchUrl(item['src'])
                             media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], imageData))
 
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 

@@ -1,0 +1,9 @@
+TODO:
+-Implement delete note.
+-Implement edit note.
+-Implement getImageFromID.
+-implement addImage 
+-Start working on pagenation
+-Investigate writing some unit tests with nose.
+-Start writing docs with pydoc
+-Migrate PyQT demo application to use library
