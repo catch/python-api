@@ -1,7 +1,12 @@
+DONE (0.2-devel):
+
+-Implement getuserId
+-Implement getImageFromID.
+
 TODO:
 -Implement delete note.
+-Flesh out code for handling location in notes
 -Implement edit note.
--Implement getImageFromID.
 -implement addImage 
 -Start working on pagenation
 -Investigate writing some unit tests with nose.
