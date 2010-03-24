@@ -16,8 +16,9 @@
 '''A library that provides a python interface to the Snaptic API'''
 
 __author__ = 'harry@p2presearch.com'
-__version__ = '0.2-devel'
+__version__ = '0.3-devel'
 
+import mimetypes
 import base64
 import httplib
 import os
@@ -265,11 +266,11 @@ class Api(object):
     API_VERSION = "v1"
 
     def __init__(self, username, password=None):
-        self._url    = 'https://api.snaptic.com/'
-        self._urllib = urllib2
+        self._url   = 'api.snaptic.com'
         self.SetCredentials(username, password)
 
     def SetCredentials(self, username, password):
+
         '''
         Set username/password
 
@@ -281,32 +282,108 @@ class Api(object):
         self._username = username
         self._password = password
 
-    def PostNote(self, note):
-         if note:
-            url = self._url + self.API_VERSION + '/notes.json'
-            return self._PostNote(url, note)
+    def LoadImageAndAddToNoteWithID(self, filename=None, id=None):
+        if filename and id:
+            #I should do some kind of try/catch stuff here
+            try: 
+                fin     = open(filename, 'r')
+                data    = fin.read()
+                return self.AddImageToNoteWithID(filename, data, id)
+            except IOError:
+                raise SnapticError("Error reading filename")
+        else:
+            raise SnapticError("Error problem occured with information provided in LoadImageAndAddToNoteWithID")
 
-    def _PostNote(self, url, note):
-         if self._username and self._password:
-            req = self._urllib.Request(url)
-            base64string = base64.encodestring(
-                            '%s:%s' % (self._username, self._password))[:-1]
-            authheader =  "Basic %s" % base64string
-            req.add_header("Authorization", authheader)
-            data = "text=%s" % (note)
+    def AddImageToNoteWithID(self, filename=None, data=None, id=None):
+        if data and id and filename and self._password and self._username:
+            page                = "/" + self.API_VERSION + "/images/" + id +".json"
             try:
-                handle = self._urllib.urlopen(req, data)
-                data = handle.read()
+                return self._PostMultiPart(self._url, page, [("image", filename, data)])
+            except IOError, e:
+                if hasattr(e, 'code'):
+                    raise SnapticError("Error adding image to note, http error code: %s: headers %s" % (e.code, e.headers)) 
+        else:
+            raise SnapticError("Error problem occured with information provided in AddImageToNoteWithID")
+
+    def _PostMultiPart(self, host, selector, files):
+        """
+        Post files to an http host as multipart/form-data.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return the server's response page.
+        """
+        base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
+        auth            =  "Basic %s" % base64string
+        content_type, body = self._EncodeMultiPartFormData(files)
+        handler = httplib.HTTPConnection(host)
+        headers = {
+            'Authorization': auth,
+            'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
+            'Content-Type': content_type
+            }
+        handler.request('POST', selector, body, headers)
+        response = handler.getresponse()
+        return response.status, response.reason, response.read()
+
+    def _EncodeMultiPartFormData(self, files):
+        """
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return (content_type, body) ready for httplib.HTTPConnection instance
+        """
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+        CRLF = '\r\n'
+        L = []
+        for (key, filename, value) in files:
+            L.append('--' + BOUNDARY)
+            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+            L.append('Content-Type: %s' % self._GetContentType(filename))
+            L.append('')
+            L.append(value)
+        L.append('--' + BOUNDARY + '--')
+        L.append('')
+        body = CRLF.join(L)
+        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+        return content_type, body
+
+
+    def _GetContentType(self, filename):
+        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+    def DeleteNoteWithId(self, id=None):
+        if id:
+            page            = "/" + self.API_VERSION + "/notes/" + id
+            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
+            auth            =  "Basic %s" % base64string
+            h               = httplib.HTTPConnection(self._url)
+            h.putrequest('DELETE', page)
+            h.putheader('Authorization', auth )
+            h.endheaders()
+            h.close()
+        else:
+            raise SnapticError("Error deleting note, no id passed")
+
+    def PostNote(self, note):
+         if note and self._username and self._password:
+            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
+            auth            =  "Basic %s" % base64string
+            try:
+                data        = "text=%s" % (note)
+                page        = "/" + self.API_VERSION + '/notes.json'
+                handler     = httplib.HTTPConnection(self._url)
+                headers     = {'Authorization': auth}
+                handler.request("POST", page, data, headers)
+                response    = handler.getresponse()
+                data        = response.read()
+                handler.close()
                 return data
             except IOError, e:
                 if hasattr(e, 'code'):
-                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
+                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers)) 
 
     def GetImageWithId(self, id):
         '''
         Get image data using the following id
         '''
-        url = self._url + "viewImage.action?viewNodeId=" + id
+        url = "/viewImage.action?viewNodeId=" + id
         return self._FetchUrl(url)
 
     def GetUserId(self):
@@ -319,26 +396,26 @@ class Api(object):
             raise SnapticError("Error user id not set, try calling GetNotes.")
 
     def GetNotes(self):
-        url = self._url + self.API_VERSION + "/notes.json"
+        url = "/" + self.API_VERSION + "/notes.json"
         jsonNotes = self._FetchUrl(url)
         return self._ParseNotes(jsonNotes)
 
     def GetNotesAsJson(self):
-        url = self._url + self.API_VERSION +  "/notes.json"
+        url = "/" + self.API_VERSION + "/notes.json"
         return self._FetchUrl(url)
 
     def _FetchUrl(self, url):
-
         if self._username and self._password:
-            req = self._urllib.Request(url)
-            base64string = base64.encodestring(
-                            '%s:%s' % (self._username, self._password))[:-1]
-            authheader =  "Basic %s" % base64string
-            req.add_header("Authorization", authheader)
-
+            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
+            auth            =  "Basic %s" % base64string
             try:
-                handle = self._urllib.urlopen(req)
-                data = handle.read()
+                handle      = httplib.HTTPConnection(self._url)
+                handle.putrequest('GET', url)
+                handle.putheader('Authorization', auth )
+                handle.endheaders()
+                response    = handle.getresponse()
+                data        = response.read()
+                handle.close()
                 return data
             except IOError, e:
                 if hasattr(e, 'code'):

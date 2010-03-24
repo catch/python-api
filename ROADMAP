@@ -1,13 +1,20 @@
-DONE (0.2-devel):
+0.3-devel:
+
+-Implement delete note.
+-Rewrite to use httlib and not urllib
+-implement addImage
+
+0.2-devel:
 
 -Implement getuserId
 -Implement getImageFromID.
 
 TODO:
--Implement delete note.
+-Write function to fetch just one note from id
+-Write function to fetch just user details
+-Clean up accessors like /v1/images
 -Flesh out code for handling location in notes
 -Implement edit note.
--implement addImage 
 -Start working on pagenation
 -Investigate writing some unit tests with nose.
 -Start writing docs with pydoc
