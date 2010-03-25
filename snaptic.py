@@ -35,8 +35,6 @@ class SnapticError(Exception):
     '''Returns the first argument used to construct this error.'''
     return self.args[0]
 
-
-
 class User(object):
     '''A class representing the User structure used by the Snaptic API.
 
@@ -78,7 +76,6 @@ class User(object):
         Set users id
         '''
         self.id = id
-
 
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
@@ -252,6 +249,16 @@ class Api(object):
             }   ,
         {"hi":"a little wave"}]}
 
+       To delete the above note:
+       >> jsonR  = json.loads(r)
+       >> id     = jsonR["notes"][0]['id']
+       >> api.DeleteNoteWithId(id)
+
+       To add an image to the above note
+       >> jsonR  = json.loads(r)
+       >> id     = jsonR["notes"][0]['id']
+       >> api.LoadImageAndAddToNoteWithID("myimage.jpg", id)
+
        To download image data from a note:
        >> m  = note.GetMedia()
        >> id = m[0].GetID()
@@ -264,11 +271,12 @@ class Api(object):
     '''
     API_VERSION = "v1"
 
-    def __init__(self, username, password=None):
+    def __init__(self, username, password=None, url='api.snaptic.com', use_ssl=True, port=443, timeout=10):
         self._url       = 'api.snaptic.com'
-        self._useSSL    = True
-        self._port      = 443
-        self._timeout   = 10
+        self._use_ssl   = use_ssl
+        self._port      = port
+        self._timeout   = timeout
+        self._user      = None
         self.SetCredentials(username, password)
 
     def SetCredentials(self, username, password):
@@ -280,7 +288,6 @@ class Api(object):
             username: snaptic username
             password: snaptic password
         '''
-        self._user     = None
         self._username = username
         self._password = password
 
@@ -293,10 +300,10 @@ class Api(object):
             except IOError:
                 raise SnapticError("Error reading filename")
         else:
-            raise SnapticError("Error problem occured with information provided in LoadImageAndAddToNoteWithID")
+            raise SnapticError("Error problem occured with one of the variables passed to LoadImageAndAddToNoteWithID, filename: %s, id: %s." % (filename, id))
 
     def AddImageToNoteWithID(self, filename=None, data=None, id=None):
-        if data and id and filename and self._password and self._username:
+        if data and id and filename:
             page                = "/" + self.API_VERSION + "/images/" + id +".json"
             try:
                 return self._PostMultiPart(self._url, page, [("image", filename, data)])
@@ -304,7 +311,7 @@ class Api(object):
                 if hasattr(e, 'code'):
                     raise SnapticError("Error adding image to note, http error code: %s: headers %s" % (e.code, e.headers)) 
         else:
-            raise SnapticError("Error problem occured with information provided in AddImageToNoteWithID")
+            raise SnapticError("Error problem occured with variables passed to AddImageToNoteWithID filename: %s, id: %s " % (filename, id))
 
     def _PostMultiPart(self, host, selector, files):
         """
@@ -312,18 +319,21 @@ class Api(object):
         files is a sequence of (name, filename, value) elements for data to be uploaded as files
         Return the server's response page.
         """
-        base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
-        auth            =  "Basic %s" % base64string
         content_type, body = self._EncodeMultiPartFormData(files)
-        handler = httplib.HTTPConnection(host)
-        headers = {
-            'Authorization': auth,
-            'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
-            'Content-Type': content_type
-            }
-        handler.request('POST', selector, body, headers)
-        response = handler.getresponse()
-        return response.status, response.reason, response.read()
+        try:
+            handler = httplib.HTTPConnection(host)
+            headers = self._MakeBasicAuthHeaders(self._username, self._password)
+            h = {
+                'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
+                'Content-Type': content_type
+                }
+            headers.update(h)
+            handler.request('POST', selector, body, headers)
+            response = handler.getresponse()
+            return response.status, response.reason, response.read()
+        except IOError, e:
+             if hasattr(e, 'code'):
+                raise SnapticError("Error posting file to note, http error code: %s: headers %s" % (e.code, e.headers))
 
     def _EncodeMultiPartFormData(self, files):
         """
@@ -358,17 +368,16 @@ class Api(object):
             except IOError, e:
                  if hasattr(e, 'code'):
                     raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
-
         else:
             raise SnapticError("Error deleting note, no id passed")
 
-    def PostNote(self, note):
-        if note and self._username and self._password:
+    def PostNote(self, note=None):
+        if note:
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
             page        = "/" + self.API_VERSION + '/notes.json'
             try:
-                handle      = self._BasicAuthRequest(page, method='POST', params=params)
+                handle      = self._BasicAuthRequest(page, headers=headers, method='POST', params=params)
                 response    = handle.getresponse()
                 data        = response.read()
                 handle.close()
@@ -376,6 +385,8 @@ class Api(object):
             except IOError, e:
                  if hasattr(e, 'code'):
                     raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
+        else:
+            raise SnapticError("Error posting note, no note value passed")
 
     def GetImageWithId(self, id):
         '''
@@ -415,24 +426,25 @@ class Api(object):
                     raise SnapticError("Error fetching url, http error code: %s: headers %s" % (e.code, e.headers))
 
     def _MakeBasicAuthHeaders(self, username, password):
-        headers = dict(Authorization="Basic %s"
-                %(base64.b64encode("%s:%s" %(username, password))))
+        if username and password:
+            headers = dict(Authorization="Basic %s"
+                    %(base64.b64encode("%s:%s" %(username, password))))
+        else:
+            raise SnapticError("Error making bacis auth headers with username: %s, password: %s" % (username, password))
         return headers
 
     def _BasicAuthRequest(self, path, method='GET', headers={}, params={}):
-
         ''' Make a HTTP request with basic auth header and supplied method.
         Defaults to operating over SSL. '''
         h = self._MakeBasicAuthHeaders(self._username, self._password)
         h.update(headers)
-        if self._useSSL:
+        if self._use_ssl:
             handler = httplib.HTTPSConnection
         else:
             handler = httplib.HTTPConnection
 
         # 'timeout' parameter is only available in Python 2.6+
-        if (sys.version_info[0] <= 2
-            and sys.version_info[1] < 6):
+        if sys.version_info[:2] < (2, 6):
             conn = handler(self._url, self._port)
         else:
             conn = handler(self._url, self._port, timeout=self._timeout)
