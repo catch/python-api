@@ -376,15 +376,13 @@ class Api(object):
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
             page        = "/" + self.API_VERSION + '/notes.json'
-            try:
-                handle      = self._BasicAuthRequest(page, headers=headers, method='POST', params=params)
-                response    = handle.getresponse()
-                data        = response.read()
-                handle.close()
-                return data
-            except IOError, e:
-                 if hasattr(e, 'code'):
-                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
+            handle      = self._BasicAuthRequest(page, headers=headers, method='POST', params=params)
+            response    = handle.getresponse()
+            data        = response.read()
+            handle.close()
+            if response.status != int(200):
+                raise SnapticError("Error posting note, http status: %s, message: %s " % (response.status, data))
+            return data
         else:
             raise SnapticError("Error posting note, no note value passed")
 
