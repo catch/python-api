@@ -25,8 +25,6 @@ import os
 import simplejson as json
 import sys
 from urllib import urlencode
-#import urllib
-#import urllib2
 import urlparse
 
 class SnapticError(Exception):
@@ -347,11 +345,9 @@ class Api(object):
         content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
         return content_type, body
 
-
     def _GetContentType(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-    #Try refactoring to use basic auth -htormey
     def DeleteNoteWithId(self, id=None):
         if id:
             try:
@@ -473,5 +469,3 @@ class Api(object):
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
                                 note['source_url'], user, note['children'], media, labels, location))
         return notes
-
-
