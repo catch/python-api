@@ -24,8 +24,9 @@ import httplib
 import os
 import simplejson as json
 import sys
-import urllib
-import urllib2
+from urllib import urlencode
+#import urllib
+#import urllib2
 import urlparse
 
 class SnapticError(Exception):
@@ -266,7 +267,10 @@ class Api(object):
     API_VERSION = "v1"
 
     def __init__(self, username, password=None):
-        self._url   = 'api.snaptic.com'
+        self._url       = 'api.snaptic.com'
+        self._useSSL    = True
+        self._port      = 443
+        self._timeout   = 10
         self.SetCredentials(username, password)
 
     def SetCredentials(self, username, password):
@@ -284,7 +288,6 @@ class Api(object):
 
     def LoadImageAndAddToNoteWithID(self, filename=None, id=None):
         if filename and id:
-            #I should do some kind of try/catch stuff here
             try: 
                 fin     = open(filename, 'r')
                 data    = fin.read()
@@ -348,36 +351,35 @@ class Api(object):
     def _GetContentType(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
+    #Try refactoring to use basic auth -htormey
     def DeleteNoteWithId(self, id=None):
         if id:
-            page            = "/" + self.API_VERSION + "/notes/" + id
-            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
-            auth            =  "Basic %s" % base64string
-            h               = httplib.HTTPConnection(self._url)
-            h.putrequest('DELETE', page)
-            h.putheader('Authorization', auth )
-            h.endheaders()
-            h.close()
+            try:
+                page            = "/" + self.API_VERSION + "/notes/" + id
+                handle          = self._BasicAuthRequest(page, method='DELETE')
+                response        = handle.getresponse()
+                handle.close()
+            except IOError, e:
+                 if hasattr(e, 'code'):
+                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
+
         else:
             raise SnapticError("Error deleting note, no id passed")
 
     def PostNote(self, note):
-         if note and self._username and self._password:
-            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
-            auth            =  "Basic %s" % base64string
+        if note and self._username and self._password:
+            headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
+            params      = urlencode(dict(text=note))
+            page        = "/" + self.API_VERSION + '/notes.json'
             try:
-                data        = "text=%s" % (note)
-                page        = "/" + self.API_VERSION + '/notes.json'
-                handler     = httplib.HTTPConnection(self._url)
-                headers     = {'Authorization': auth}
-                handler.request("POST", page, data, headers)
-                response    = handler.getresponse()
+                handle      = self._BasicAuthRequest(page, method='POST', params=params)
+                response    = handle.getresponse()
                 data        = response.read()
-                handler.close()
+                handle.close()
                 return data
             except IOError, e:
-                if hasattr(e, 'code'):
-                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers)) 
+                 if hasattr(e, 'code'):
+                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
 
     def GetImageWithId(self, id):
         '''
@@ -406,20 +408,40 @@ class Api(object):
 
     def _FetchUrl(self, url):
         if self._username and self._password:
-            base64string    = base64.encodestring('%s:%s' % (self._username, self._password))[:-1]
-            auth            =  "Basic %s" % base64string
             try:
-                handle      = httplib.HTTPConnection(self._url)
-                handle.putrequest('GET', url)
-                handle.putheader('Authorization', auth )
-                handle.endheaders()
-                response    = handle.getresponse()
-                data        = response.read()
+                handle       = self._BasicAuthRequest(url)
+                response     = handle.getresponse()
+                data         = response.read()
                 handle.close()
                 return data
             except IOError, e:
                 if hasattr(e, 'code'):
                     raise SnapticError("Error fetching url, http error code: %s: headers %s" % (e.code, e.headers))
+
+    def _MakeBasicAuthHeaders(self, username, password):
+        headers = dict(Authorization="Basic %s"
+                %(base64.b64encode("%s:%s" %(username, password))))
+        return headers
+
+    def _BasicAuthRequest(self, path, method='GET', headers={}, params={}):
+
+        ''' Make a HTTP request with basic auth header and supplied method.
+        Defaults to operating over SSL. '''
+        h = self._MakeBasicAuthHeaders(self._username, self._password)
+        h.update(headers)
+        if self._useSSL:
+            handler = httplib.HTTPSConnection
+        else:
+            handler = httplib.HTTPConnection
+
+        # 'timeout' parameter is only available in Python 2.6+
+        if (sys.version_info[0] <= 2
+            and sys.version_info[1] < 6):
+            conn = handler(self._url, self._port)
+        else:
+            conn = handler(self._url, self._port, timeout=self._timeout)
+        conn.request(method, path, params, headers=h)
+        return conn
 
     def _ParseNotes( self, source, get_image_data=False):
         notes      = []
