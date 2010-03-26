@@ -35,6 +35,19 @@ class SnapticError(Exception):
     '''Returns the first argument used to construct this error.'''
     return self.args[0]
 
+  @property
+  def status(self):
+    '''Returns the second argument used to construct this error.'''
+    return self.args[1]
+
+  @property
+  def response(self):
+    '''Returns the third argument used to construct this error.'''
+    return self.args[2]
+
+
+
+
 class User(object):
     '''A class representing the User structure used by the Snaptic API.
 
@@ -380,8 +393,8 @@ class Api(object):
             response    = handle.getresponse()
             data        = response.read()
             handle.close()
-            if response.status != int(200):
-                raise SnapticError("Error posting note, http status: %s, message: %s " % (response.status, data))
+            if int(response.status) != 200:
+                raise SnapticError("Error posting note ", int(response.status), data)
             return data
         else:
             raise SnapticError("Error posting note, no note value passed")
