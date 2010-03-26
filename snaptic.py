@@ -37,12 +37,12 @@ class SnapticError(Exception):
 
   @property
   def status(self):
-    '''Returns the second argument used to construct this error.'''
+    '''Returns the HTTP status code used to construct this error.'''
     return self.args[1]
 
   @property
   def response(self):
-    '''Returns the third argument used to construct this error.'''
+    '''Returns HTTP response body used to construct this error.'''
     return self.args[2]
 
 
