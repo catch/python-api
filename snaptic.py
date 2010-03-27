@@ -318,11 +318,7 @@ class Api(object):
     def AddImageToNoteWithID(self, filename=None, data=None, id=None):
         if data and id and filename:
             page                = "/" + self.API_VERSION + "/images/" + id +".json"
-            try:
-                return self._PostMultiPart(self._url, page, [("image", filename, data)])
-            except IOError, e:
-                if hasattr(e, 'code'):
-                    raise SnapticError("Error adding image to note, http error code: %s: headers %s" % (e.code, e.headers)) 
+            return self._PostMultiPart(self._url, page, [("image", filename, data)])
         else:
             raise SnapticError("Error problem occured with variables passed to AddImageToNoteWithID filename: %s, id: %s " % (filename, id))
 
@@ -333,20 +329,20 @@ class Api(object):
         Return the server's response page.
         """
         content_type, body = self._EncodeMultiPartFormData(files)
-        try:
-            handler = httplib.HTTPConnection(host)
-            headers = self._MakeBasicAuthHeaders(self._username, self._password)
-            h = {
-                'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
-                'Content-Type': content_type
-                }
-            headers.update(h)
-            handler.request('POST', selector, body, headers)
-            response = handler.getresponse()
-            return response.status, response.reason, response.read()
-        except IOError, e:
-             if hasattr(e, 'code'):
-                raise SnapticError("Error posting file to note, http error code: %s: headers %s" % (e.code, e.headers))
+        handler = httplib.HTTPConnection(host)
+        headers = self._MakeBasicAuthHeaders(self._username, self._password)
+        h = {
+            'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
+            'Content-Type': content_type
+            }
+        headers.update(h)
+        handler.request('POST', selector, body, headers)
+        response = handler.getresponse()
+        data     = response.read()
+        handler.close()
+        if int(response.status) != 200:
+            raise SnapticError("Error posting files ", int(response.status), data)
+        return data
 
     def _EncodeMultiPartFormData(self, files):
         """
@@ -373,14 +369,13 @@ class Api(object):
 
     def DeleteNoteWithId(self, id=None):
         if id:
-            try:
-                page            = "/" + self.API_VERSION + "/notes/" + id
-                handle          = self._BasicAuthRequest(page, method='DELETE')
-                response        = handle.getresponse()
-                handle.close()
-            except IOError, e:
-                 if hasattr(e, 'code'):
-                    raise SnapticError("Error posting note, http error code: %s: headers %s" % (e.code, e.headers))
+            page            = "/" + self.API_VERSION + "/notes/" + id
+            handler         = self._BasicAuthRequest(page, method='DELETE')
+            response        = handle.getresponse()
+            handler.close()
+            if int(response.status) != 200:
+                data        = response.read()
+                raise SnapticError("Http error deleting note", int(response.status), data)
         else:
             raise SnapticError("Error deleting note, no id passed")
 
@@ -394,7 +389,7 @@ class Api(object):
             data        = response.read()
             handle.close()
             if int(response.status) != 200:
-                raise SnapticError("Error posting note ", int(response.status), data)
+                raise SnapticError("Http error posting note ", int(response.status), data)
             return data
         else:
             raise SnapticError("Error posting note, no note value passed")
@@ -403,8 +398,11 @@ class Api(object):
         '''
         Get image data using the following id
         '''
-        url = "/viewImage.action?viewNodeId=" + id
-        return self._FetchUrl(url)
+        if id:
+            url = "/viewImage.action?viewNodeId=" + id
+            return self._FetchUrl(url)
+        else:
+            raise SnapticError("Error user id not set, try calling GetNotes.")
 
     def GetUserId(self):
         '''
@@ -425,16 +423,13 @@ class Api(object):
         return self._FetchUrl(url)
 
     def _FetchUrl(self, url):
-        if self._username and self._password:
-            try:
-                handle       = self._BasicAuthRequest(url)
-                response     = handle.getresponse()
-                data         = response.read()
-                handle.close()
-                return data
-            except IOError, e:
-                if hasattr(e, 'code'):
-                    raise SnapticError("Error fetching url, http error code: %s: headers %s" % (e.code, e.headers))
+        handler       = self._BasicAuthRequest(url)
+        response      = handler.getresponse()
+        data          = response.read()
+        handler.close()
+        if int(response.status) != 200:
+            raise SnapticError("Http error", int(response.status), data)
+        return data
 
     def _MakeBasicAuthHeaders(self, username, password):
         if username and password:
