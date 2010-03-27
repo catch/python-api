@@ -27,6 +27,10 @@ import sys
 from urllib import urlencode
 import urlparse
 
+def Property(func):
+    return property(**func())
+
+
 class SnapticError(Exception):
   '''Base class for Snaptic errors'''
 
@@ -45,9 +49,6 @@ class SnapticError(Exception):
     '''Returns HTTP response body used to construct this error.'''
     return self.args[2]
 
-
-
-
 class User(object):
     '''A class representing the User structure used by the Snaptic API.
 
@@ -57,38 +58,38 @@ class User(object):
     '''
 
     def __init__(self, id=None, user_name=None):
-        self.id             = id
-        self.user_name      = user_name
+        self._id             = id
+        self._user_name      = user_name
 
-    def GetUserName(self):
-        '''
-        Return user_name
-        '''
-        if self.user_name:
-            return self.user_name
-        else:
-            raise SnapticError("Error user name not set")
+    @Property
+    def id():
+        doc = "Users snaptic id"
 
-    def SetUserName(self, user_name):
-        '''
-        Set user_name
-        '''
-        self.user_name = user_name
+        def fget(self):
+            return self._id
 
-    def GetId(self):
-        '''
-        Return users id
-        '''
-        if self.id:
-            return self.id
-        else:
-            raise SnapticError("Error user id not set")
+        def fset(self, id):
+            self._id = id
 
-    def SetId(self, id):
-        '''
-        Set users id
-        '''
-        self.id = id
+        def fdel(self):
+            del self._id
+
+        return locals()
+
+    @Property
+    def user_name():
+        doc = "User name"
+
+        def fget(self):
+            return self._user_name
+
+        def fset(self, user_name):
+            self._user_name = user_name
+
+        def fdel(self):
+            del self._user_name
+
+        return locals()
 
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
@@ -371,7 +372,7 @@ class Api(object):
         if id:
             page            = "/" + self.API_VERSION + "/notes/" + id
             handler         = self._BasicAuthRequest(page, method='DELETE')
-            response        = handle.getresponse()
+            response        = handler.getresponse()
             handler.close()
             if int(response.status) != 200:
                 data        = response.read()
