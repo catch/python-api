@@ -350,12 +350,15 @@ class Api(object):
         doc = "Json object of notes stored in account"
         def fget(self):
             if self._json:
-                return self.json
+                return self._json #should I return json.load(sef._json) ? -htormey
             else:
                 return self.get_json()
         return locals()
 
     def get_json(self):
+        '''
+        Get json object and update the cache
+        '''
         url         = "/" + self.API_VERSION + "/notes.json"
         self._json  = self._fetch_url(url)
         return self._json
@@ -409,7 +412,7 @@ class Api(object):
                 if 'user' in note:
                     self._user = User(note['user']['id'], note['user']['user_name'])
                 if 'location' in note:
-                    pass
+                    pass 
                 if 'labels' in note:
                     labels = []
                     for label in note['labels']:
