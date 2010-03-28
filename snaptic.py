@@ -201,7 +201,7 @@ class Api(object):
        >> fout.write(d)
        >> fout.close()
     '''
-    API_SERVER      ="api.snaptic.com"
+    API_SERVER      = "api.snaptic.com"
     API_VERSION     = "v1"
     HTTP_GET        = "GET"
     HTTP_POST       = "POST"
@@ -406,7 +406,7 @@ class Api(object):
             headers = dict(Authorization="Basic %s"
                     %(base64.b64encode("%s:%s" %(username, password))))
         else:
-            raise SnapticError("Error making bacis auth headers with username: %s, password: %s" % (username, password))
+            raise SnapticError("Error making basic auth headers with username: %s, password: %s" % (username, password))
         return headers
 
     def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
@@ -456,7 +456,7 @@ class Api(object):
                             if get_image_data:
                                 image_data = self._fetch_url(item['src'])
                             media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
-                #source returns None??
+
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
                                 note['source_url'], user, note['children'], media, labels, location))
         return notes
