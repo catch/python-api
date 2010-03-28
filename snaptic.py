@@ -30,7 +30,6 @@ import urlparse
 def Property(func):
     return property(**func())
 
-
 class SnapticError(Exception):
   '''Base class for Snaptic errors'''
 
@@ -61,35 +60,13 @@ class User(object):
         self._id             = id
         self._user_name      = user_name
 
-    @Property
-    def id():
-        doc = "Users snaptic id"
+    @property
+    def id(self):
+        return self._id
 
-        def fget(self):
-            return self._id
-
-        def fset(self, id):
-            self._id = id
-
-        def fdel(self):
-            del self._id
-
-        return locals()
-
-    @Property
-    def user_name():
-        doc = "User name"
-
-        def fget(self):
-            return self._user_name
-
-        def fset(self, user_name):
-            self._user_name = user_name
-
-        def fdel(self):
-            del self._user_name
-
-        return locals()
+    @property
+    def user_name(self):
+        return self._user_name
 
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
@@ -115,32 +92,6 @@ class Image(object):
         self.src            = src
         self.data           = data
 
-    def SetID(self, id):
-        '''
-        Set ID of image.
-        '''
-        self.id = id
-
-    def GetID(self):
-        '''
-        Return ID of image
-        '''
-        return self.id
-
-    def SetData(self, data):
-        '''
-        Set image data.
-        '''
-        self.data = data
-
-    def GetData(self):
-        '''
-        Return data so that image can be displayed/written to disk as .jpg.
-        If data=None, image data has not yet been fetched.
-        '''
-        if self.data:
-            return data
-
 class Note(object):
     '''A class representing the Note structure used by the Snaptic API.
 
@@ -158,6 +109,7 @@ class Note(object):
        note.media
        note.labels
        note.location
+       note.has_media
     '''
 
     def __init__(self, created_at, modified_at, reminder_at, note_id, text,
@@ -176,52 +128,12 @@ class Note(object):
         self.labels       = labels
         self.location     = location
 
-    def NoteHasMedia(self):
+    @property
+    def has_media(self):
         if len(self.media) > 0:
             return True
         return False
 
-    def GetCreatedAt(self):
-        return self.created_at
-
-    def GetModifiedAt(self):
-        return self.modified_at
-
-    def GetReminderAt(self):
-        return self.reminder_at
-
-    def GetNoteId(self):
-        return self.note_id
-
-    def GetText(self):
-        return self.text
-
-    def GetSummary(self):
-        return self.summary
-
-    def GetSource(self):
-        return self.source
-
-    def GetSourceUrl(self):
-        return self.source_url
-
-    def GetUser(self):
-        return self.user
-
-    def GetChildren(self):
-        return self.children
-
-    def GetMedia(self):
-        '''
-        Returns list of media associated with note. For now just images.
-        '''
-        return self.media
-
-    def GetLabels(self):
-        return self.labels
-
-    def GetLocation(self):
-        return self.location
 
 class Api(object):
     '''A python interface into the Snaptic API
@@ -231,16 +143,15 @@ class Api(object):
         >> import snaptic
         >> api = snaptic.Api("username", "password")
 
-        To fetch users notes:
-        >> notes = api.GetNotes()
-        >> print [n.GetCreatedAt() for n in notes]
+        To fetch users notes and print an attribute:
+        >> print [n.created_at for n in api.notes]
 
         ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
         '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
         '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
 
         To post a note:
-        >> r = api.PostNote("#harry My third note just got uploaded")
+        >> r = api.post_note("#harry My note just got posted")
         >> print r
         "notes":[
             {
@@ -249,7 +160,7 @@ class Api(object):
             "reminder_at": "",
             "id": "1422194",
             "text": "#harry My third note just got uploaded",
-            "summary": "#harry My third note just got uploaded",
+            "summary": "#harry My note just got posted",
             "source": "3banana",
             "source_url": "https://snaptic.com/",
             "user": {
@@ -263,21 +174,20 @@ class Api(object):
             }   ,
         {"hi":"a little wave"}]}
 
-       To delete the above note:
-       >> jsonR  = json.loads(r)
-       >> id     = jsonR["notes"][0]['id']
-       >> api.DeleteNoteWithId(id)
+       To delete a note:
+       >> id        = api.notes[1].note_id
+       >> api.delete_note_with_id(id)
 
        To add an image to the above note
-       >> jsonR  = json.loads(r)
-       >> id     = jsonR["notes"][0]['id']
-       >> api.LoadImageAndAddToNoteWithID("myimage.jpg", id)
+       >> id        = api.notes[1].note_id
+       >> api.load_image_and_add_to_note_with_id("myimage.jpg", id)
 
        To download image data from a note:
-       >> m  = note.GetMedia()
-       >> id = m[0].GetID()
-       >> d = api.GetImageWithId(id)
-       >> filename = "%s.jpg" % id
+       >> api.notes[1].has_media
+       True
+       >> id = api.notes[1].note_id
+       >> d = api.get_image_with_id(id)
+       >> filename = "/Users/harrytormey/%s.jpg" % id
        >> fout = open(filename, "wb")
        >> fout.write(d)
        >> fout.close()
@@ -291,9 +201,11 @@ class Api(object):
         self._port      = port
         self._timeout   = timeout
         self._user      = None
-        self.SetCredentials(username, password)
+        self._notes     = None
+        self._json      = None
+        self.set_credentials(username, password)
 
-    def SetCredentials(self, username, password):
+    def set_credentials(self, username, password):
 
         '''
         Set username/password
@@ -305,33 +217,33 @@ class Api(object):
         self._username = username
         self._password = password
 
-    def LoadImageAndAddToNoteWithID(self, filename=None, id=None):
+    def load_image_and_add_to_note_with_id(self, filename=None, id=None):
         if filename and id:
             try: 
                 fin     = open(filename, 'r')
                 data    = fin.read()
-                return self.AddImageToNoteWithID(filename, data, id)
+                self.add_image_to_note_with_id(filename, data, id)
             except IOError:
                 raise SnapticError("Error reading filename")
         else:
             raise SnapticError("Error problem occured with one of the variables passed to LoadImageAndAddToNoteWithID, filename: %s, id: %s." % (filename, id))
 
-    def AddImageToNoteWithID(self, filename=None, data=None, id=None):
+    def add_image_to_note_with_id(self, filename=None, data=None, id=None):
         if data and id and filename:
             page                = "/" + self.API_VERSION + "/images/" + id +".json"
-            return self._PostMultiPart(self._url, page, [("image", filename, data)])
+            return self._post_multi_part(self._url, page, [("image", filename, data)])
         else:
             raise SnapticError("Error problem occured with variables passed to AddImageToNoteWithID filename: %s, id: %s " % (filename, id))
 
-    def _PostMultiPart(self, host, selector, files):
+    def _post_multi_part(self, host, selector, files):
         """
         Post files to an http host as multipart/form-data.
         files is a sequence of (name, filename, value) elements for data to be uploaded as files
         Return the server's response page.
         """
-        content_type, body = self._EncodeMultiPartFormData(files)
+        content_type, body = self._encode_multi_part_form_data(files)
         handler = httplib.HTTPConnection(host)
-        headers = self._MakeBasicAuthHeaders(self._username, self._password)
+        headers = self._make_basic_auth_headers(self._username, self._password)
         h = {
             'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
             'Content-Type': content_type
@@ -343,9 +255,9 @@ class Api(object):
         handler.close()
         if int(response.status) != 200:
             raise SnapticError("Error posting files ", int(response.status), data)
-        return data
 
-    def _EncodeMultiPartFormData(self, files):
+
+    def _encode_multi_part_form_data(self, files):
         """
         files is a sequence of (name, filename, value) elements for data to be uploaded as files
         Return (content_type, body) ready for httplib.HTTPConnection instance
@@ -356,7 +268,7 @@ class Api(object):
         for (key, filename, value) in files:
             L.append('--' + BOUNDARY)
             L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-            L.append('Content-Type: %s' % self._GetContentType(filename))
+            L.append('Content-Type: %s' % self._get_content_type(filename))
             L.append('')
             L.append(value)
         L.append('--' + BOUNDARY + '--')
@@ -365,13 +277,13 @@ class Api(object):
         content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
         return content_type, body
 
-    def _GetContentType(self, filename):
+    def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-    def DeleteNoteWithId(self, id=None):
+    def delete_note_with_id(self, id=None):
         if id:
             page            = "/" + self.API_VERSION + "/notes/" + id
-            handler         = self._BasicAuthRequest(page, method='DELETE')
+            handler         = self._basic_auth_request(page, method='DELETE')
             response        = handler.getresponse()
             handler.close()
             if int(response.status) != 200:
@@ -380,12 +292,12 @@ class Api(object):
         else:
             raise SnapticError("Error deleting note, no id passed")
 
-    def PostNote(self, note=None):
+    def post_note(self, note=None):
         if note:
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
             page        = "/" + self.API_VERSION + '/notes.json'
-            handle      = self._BasicAuthRequest(page, headers=headers, method='POST', params=params)
+            handle      = self._basic_auth_request(page, headers=headers, method='POST', params=params)
             response    = handle.getresponse()
             data        = response.read()
             handle.close()
@@ -395,36 +307,61 @@ class Api(object):
         else:
             raise SnapticError("Error posting note, no note value passed")
 
-    def GetImageWithId(self, id):
+    def get_image_with_id(self, id):
         '''
         Get image data using the following id
         '''
         if id:
             url = "/viewImage.action?viewNodeId=" + id
-            return self._FetchUrl(url)
+            return self._fetch_url(url)
         else:
             raise SnapticError("Error user id not set, try calling GetNotes.")
 
-    def GetUserId(self):
+    def get_user_id(self):
         '''
         Get ID of API user.
         '''
         if self._user:
-            return self._user.GetId()
+            return self._user.id
         else:
             raise SnapticError("Error user id not set, try calling GetNotes.")
 
-    def GetNotes(self):
-        url = "/" + self.API_VERSION + "/notes.json"
-        jsonNotes = self._FetchUrl(url)
-        return self._ParseNotes(jsonNotes)
+    @Property
+    def notes():
+        doc = "A parsed list of note objects"
+        def fget(self):
+            if self._notes:
+                return self._notes
+            else:
+                return self.get_notes()
+        return locals()
 
-    def GetNotesAsJson(self):
-        url = "/" + self.API_VERSION + "/notes.json"
-        return self._FetchUrl(url)
+    def get_notes(self):
+        '''
+        Get notes and update the cache
+        '''
+        url          = "/" + self.API_VERSION + "/notes.json"
+        json_notes   = self._fetch_url(url)
+        self._notes  = self._parse_notes(json_notes)
+        return self._notes
 
-    def _FetchUrl(self, url):
-        handler       = self._BasicAuthRequest(url)
+    @Property
+    def json():
+        doc = "Json object of notes stored in account"
+        def fget(self):
+            if self._json:
+                return self.json
+            else:
+                return self.get_json()
+        return locals()
+
+    def get_json(self):
+        url         = "/" + self.API_VERSION + "/notes.json"
+        self._json  = self._fetch_url(url)
+        return self._json
+
+    def _fetch_url(self, url):
+        handler       = self._basic_auth_request(url)
         response      = handler.getresponse()
         data          = response.read()
         handler.close()
@@ -432,7 +369,7 @@ class Api(object):
             raise SnapticError("Http error", int(response.status), data)
         return data
 
-    def _MakeBasicAuthHeaders(self, username, password):
+    def _make_basic_auth_headers(self, username, password):
         if username and password:
             headers = dict(Authorization="Basic %s"
                     %(base64.b64encode("%s:%s" %(username, password))))
@@ -440,10 +377,10 @@ class Api(object):
             raise SnapticError("Error making bacis auth headers with username: %s, password: %s" % (username, password))
         return headers
 
-    def _BasicAuthRequest(self, path, method='GET', headers={}, params={}):
+    def _basic_auth_request(self, path, method='GET', headers={}, params={}):
         ''' Make a HTTP request with basic auth header and supplied method.
         Defaults to operating over SSL. '''
-        h = self._MakeBasicAuthHeaders(self._username, self._password)
+        h = self._make_basic_auth_headers(self._username, self._password)
         h.update(headers)
         if self._use_ssl:
             handler = httplib.HTTPSConnection
@@ -458,11 +395,11 @@ class Api(object):
         conn.request(method, path, params, headers=h)
         return conn
 
-    def _ParseNotes( self, source, get_image_data=False):
+    def _parse_notes( self, source, get_image_data=False):
         notes      = []
-        jsonNotes  = json.loads(source)
+        json_notes  = json.loads(source)
 
-        for note in jsonNotes['notes']:
+        for note in json_notes['notes']:
             media           = []
             location        = []
             labels          = []
@@ -480,10 +417,10 @@ class Api(object):
                 if 'media' in note:
                     for item in note['media']:
                         if item['type'] == 'image':
-                            imageData = None
+                            image_data = None
                             if get_image_data:
-                                imageData = self._FetchUrl(item['src'])
-                            media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], imageData))
+                                image_data = self._fetch_url(item['src'])
+                            media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
 
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
                                 note['source_url'], user, note['children'], media, labels, location))
