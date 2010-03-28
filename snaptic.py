@@ -130,10 +130,7 @@ class Note(object):
 
     @property
     def has_media(self):
-        if len(self.media) > 0:
-            return True
-        return False
-
+        return len(self.media) > 0
 
 class Api(object):
     '''A python interface into the Snaptic API
@@ -383,7 +380,7 @@ class Api(object):
     def _basic_auth_request(self, path, method='GET', headers={}, params={}):
         ''' Make a HTTP request with basic auth header and supplied method.
         Defaults to operating over SSL. '''
-        h = self._make_basic_auth_headers(self._username, self._password)
+        h           = self._make_basic_auth_headers(self._username, self._password)
         h.update(headers)
         if self._use_ssl:
             handler = httplib.HTTPSConnection
@@ -399,7 +396,7 @@ class Api(object):
         return conn
 
     def _parse_notes( self, source, get_image_data=False):
-        notes      = []
+        notes       = []
         json_notes  = json.loads(source)
 
         for note in json_notes['notes']:
