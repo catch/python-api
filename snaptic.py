@@ -132,6 +132,14 @@ class Note(object):
     def has_media(self):
         return len(self.media) > 0
 
+    @property
+    def dictionary(self):
+        '''
+        return a dictionary version of the note
+        '''
+        #Working on adding dates/location/media and other fields to this dictionary. Right now you can just update text. -htormey
+        return dict(text=self.text)
+
 class Api(object):
     '''A python interface into the Snaptic API
 
@@ -179,6 +187,10 @@ class Api(object):
        >> id        = api.notes[1].note_id
        >> api.load_image_and_add_to_note_with_id("myimage.jpg", id)
 
+       To edit a note:
+       >> n[0].text='Harry says coolio'
+       >> api.edit_note(n[0])
+
        To download image data from a note:
        >> api.notes[1].has_media
        True
@@ -188,9 +200,11 @@ class Api(object):
        >> fout = open(filename, "wb")
        >> fout.write(d)
        >> fout.close()
-
     '''
-    API_VERSION = "v1"
+    API_VERSION     = "v1"
+    HTTP_GET        = "GET"
+    HTTP_POST       = "POST"
+    HTTP_DELETE     = "DELETE"
 
     def __init__(self, username, password=None, url='api.snaptic.com', use_ssl=True, port=443, timeout=10):
         self._url       = 'api.snaptic.com'
@@ -246,13 +260,12 @@ class Api(object):
             'Content-Type': content_type
             }
         headers.update(h)
-        handler.request('POST', selector, body, headers)
+        handler.request(self.HTTP_POST, selector, body, headers)
         response = handler.getresponse()
         data     = response.read()
         handler.close()
         if int(response.status) != 200:
             raise SnapticError("Error posting files ", int(response.status), data)
-
 
     def _encode_multi_part_form_data(self, files):
         """
@@ -280,7 +293,7 @@ class Api(object):
     def delete_note_with_id(self, id=None):
         if id:
             page            = "/" + self.API_VERSION + "/notes/" + id
-            handler         = self._basic_auth_request(page, method='DELETE')
+            handler         = self._basic_auth_request(page, method=self.HTTP_DELETE)
             response        = handler.getresponse()
             handler.close()
             if int(response.status) != 200:
@@ -289,12 +302,30 @@ class Api(object):
         else:
             raise SnapticError("Error deleting note, no id passed")
 
+    def edit_note(self, note=None):
+        '''
+        edit text/other in the note object then pass it back in to post
+        '''
+        if note: #Maybe check for attributes like id or is of type note? -htormey
+            headers        = { 'Content-type' : "application/x-www-form-urlencoded" }
+            params         = urlencode(note.dictionary)
+            page           = "/" + self.API_VERSION + '/notes/'+ note.note_id + '.json'
+            handle         = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
+            response       = handle.getresponse()
+            data           = response.read()
+            handle.close()
+            if int(response.status) != 200:
+                raise SnapticError("Http error editing note ", int(response.status), data)
+            return data
+        else:
+            raise SnapticError("Error editing note, no note value passed")
+
     def post_note(self, note=None):
-        if note:
+        if note: #Update this to use and actual note -htormey
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
             page        = "/" + self.API_VERSION + '/notes.json'
-            handle      = self._basic_auth_request(page, headers=headers, method='POST', params=params)
+            handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
             response    = handle.getresponse()
             data        = response.read()
             handle.close()
@@ -377,7 +408,7 @@ class Api(object):
             raise SnapticError("Error making bacis auth headers with username: %s, password: %s" % (username, password))
         return headers
 
-    def _basic_auth_request(self, path, method='GET', headers={}, params={}):
+    def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
         ''' Make a HTTP request with basic auth header and supplied method.
         Defaults to operating over SSL. '''
         h           = self._make_basic_auth_headers(self._username, self._password)
@@ -404,10 +435,13 @@ class Api(object):
             location        = []
             labels          = []
             user            = None
+            source          = None
 
             if 'id' in note:
                 if 'user' in note:
-                    self._user = User(note['user']['id'], note['user']['user_name'])
+                    if user == None:
+                        self._user = User(note['user']['id'], note['user']['user_name'])
+                        user = self._user
                 if 'location' in note:
                     pass 
                 if 'labels' in note:
@@ -421,7 +455,7 @@ class Api(object):
                             if get_image_data:
                                 image_data = self._fetch_url(item['src'])
                             media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
-
+                #source returns None??
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
                                 note['source_url'], user, note['children'], media, labels, location))
         return notes
