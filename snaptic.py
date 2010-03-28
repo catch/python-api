@@ -201,14 +201,16 @@ class Api(object):
        >> fout.write(d)
        >> fout.close()
     '''
-    API_SERVER              = "api.snaptic.com"
-    API_VERSION             = "v1"
-    HTTP_GET                = "GET"
-    HTTP_POST               = "POST"
-    HTTP_DELETE             = "DELETE"
-    API_ENDPOINT_NOTES_JSON = "/notes.json"
-    API_ENDPOINT_NOTES      = "/notes/"
-    API_ENDPOINT_IMAGES     = "/images/"
+
+    API_SERVER                  = "api.snaptic.com"
+    API_VERSION                 = "v1"
+    HTTP_GET                    = "GET"
+    HTTP_POST                   = "POST"
+    HTTP_DELETE                 = "DELETE"
+    API_ENDPOINT_NOTES_JSON     = "/notes.json"
+    API_ENDPOINT_NOTES          = "/notes/"
+    API_ENDPOINT_IMAGES         = "/images/"
+    API_ENDPOINT_IMAGES_VIEW    = "/viewImage.action?viewNodeId="
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
         self._url       = url
@@ -344,7 +346,7 @@ class Api(object):
         Get image data using the following id
         '''
         if id:
-            url = "/viewImage.action?viewNodeId=" + id
+            url = self.API_ENDPOINT_IMAGES_VIEW  + id
             return self._fetch_url(url)
         else:
             raise SnapticError("Error user id not set, try calling GetNotes.")
