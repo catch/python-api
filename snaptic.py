@@ -201,13 +201,14 @@ class Api(object):
        >> fout.write(d)
        >> fout.close()
     '''
+    API_SERVER      ="api.snaptic.com"
     API_VERSION     = "v1"
     HTTP_GET        = "GET"
     HTTP_POST       = "POST"
     HTTP_DELETE     = "DELETE"
 
-    def __init__(self, username, password=None, url='api.snaptic.com', use_ssl=True, port=443, timeout=10):
-        self._url       = 'api.snaptic.com'
+    def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
+        self._url       = url
         self._use_ssl   = use_ssl
         self._port      = port
         self._timeout   = timeout
