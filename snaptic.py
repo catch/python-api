@@ -201,11 +201,14 @@ class Api(object):
        >> fout.write(d)
        >> fout.close()
     '''
-    API_SERVER      = "api.snaptic.com"
-    API_VERSION     = "v1"
-    HTTP_GET        = "GET"
-    HTTP_POST       = "POST"
-    HTTP_DELETE     = "DELETE"
+    API_SERVER              = "api.snaptic.com"
+    API_VERSION             = "v1"
+    HTTP_GET                = "GET"
+    HTTP_POST               = "POST"
+    HTTP_DELETE             = "DELETE"
+    API_ENDPOINT_NOTES_JSON = "/notes.json"
+    API_ENDPOINT_NOTES      = "/notes/"
+    API_ENDPOINT_IMAGES     = "/images/"
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
         self._url       = url
@@ -242,7 +245,7 @@ class Api(object):
 
     def add_image_to_note_with_id(self, filename=None, data=None, id=None):
         if data and id and filename:
-            page                = "/" + self.API_VERSION + "/images/" + id +".json"
+            page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
             return self._post_multi_part(self._url, page, [("image", filename, data)])
         else:
             raise SnapticError("Error problem occured with variables passed to AddImageToNoteWithID filename: %s, id: %s " % (filename, id))
@@ -293,7 +296,7 @@ class Api(object):
 
     def delete_note_with_id(self, id=None):
         if id:
-            page            = "/" + self.API_VERSION + "/notes/" + id
+            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + id
             handler         = self._basic_auth_request(page, method=self.HTTP_DELETE)
             response        = handler.getresponse()
             handler.close()
@@ -310,7 +313,7 @@ class Api(object):
         if note: #Maybe check for attributes like id or is of type note? -htormey
             headers        = { 'Content-type' : "application/x-www-form-urlencoded" }
             params         = urlencode(note.dictionary)
-            page           = "/" + self.API_VERSION + '/notes/'+ note.note_id + '.json'
+            page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
             handle         = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
             response       = handle.getresponse()
             data           = response.read()
@@ -325,7 +328,7 @@ class Api(object):
         if note: #Update this to use and actual note -htormey
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
-            page        = "/" + self.API_VERSION + '/notes.json'
+            page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
             handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
             response    = handle.getresponse()
             data        = response.read()
@@ -369,7 +372,7 @@ class Api(object):
         '''
         Get notes and update the cache
         '''
-        url          = "/" + self.API_VERSION + "/notes.json"
+        url          = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         json_notes   = self._fetch_url(url)
         self._notes  = self._parse_notes(json_notes)
         return self._notes
@@ -388,7 +391,7 @@ class Api(object):
         '''
         Get json object and update the cache
         '''
-        url         = "/" + self.API_VERSION + "/notes.json"
+        url         = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         self._json  = self._fetch_url(url)
         return self._json
 
