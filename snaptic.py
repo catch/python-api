@@ -56,9 +56,12 @@ class User(object):
        user.user_name
     '''
 
-    def __init__(self, id=None, user_name=None):
+    def __init__(self, id=None, user_name=None, created_at=None, auth_token=None, email=None):
         self._id             = id
         self._user_name      = user_name
+        self._created_at     = created_at
+        self._auth_token     = auth_token
+        self._email          = email
 
     @property
     def id(self):
@@ -67,6 +70,18 @@ class User(object):
     @property
     def user_name(self):
         return self._user_name
+
+    @property
+    def created_at(self):
+        return self._created_at
+
+    @property
+    def auth_token(self):
+        return self._auth_token
+
+    @property
+    def email(self):
+        return self._email
 
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
@@ -211,6 +226,7 @@ class Api(object):
     API_ENDPOINT_NOTES          = "/notes/"
     API_ENDPOINT_IMAGES         = "/images/"
     API_ENDPOINT_IMAGES_VIEW    = "/viewImage.action?viewNodeId="
+    API_ENDPOINT_USER_JSON      = "/user.json"
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
         self._url       = url
@@ -379,6 +395,15 @@ class Api(object):
         self._notes  = self._parse_notes(json_notes)
         return self._notes
 
+    def get_user_info(self):
+        '''
+        Get user info
+        '''
+        url          = "/" + self.API_VERSION + self.API_ENDPOINT_USER_JSON
+        user_info    = self._fetch_url(url)
+        self._parse_user_info(user_info)
+
+
     @Property
     def json():
         doc = "Json object of notes stored in account"
@@ -432,7 +457,19 @@ class Api(object):
         conn.request(method, path, params, headers=h)
         return conn
 
+    def _parse_user_info(self, source):
+        '''
+        parse JSON user returned from snaptic, instantiate a User object from it.
+        '''
+        user_info   = json.loads(source)
+
+        if 'user' in user_info:
+            self._user = User(user_info['user']['id'], user_info['user']['user_name'], user_info['user']['created_at'], user_info['user']['auth_token'], user_info['user']['email'])
+
     def _parse_notes( self, source, get_image_data=False):
+        '''
+        parse JSON notes returned from snaptic, instantiate a list of note objects from it.
+        '''
         notes       = []
         json_notes  = json.loads(source)
 
@@ -445,9 +482,10 @@ class Api(object):
 
             if 'id' in note:
                 if 'user' in note:
-                    if user == None:
-                        self._user = User(note['user']['id'], note['user']['user_name'])
-                        user = self._user
+                    if self._user == None:
+                        self. get_user_info()
+                        user = self._user.id
+                    user = self._user.id
                 if 'location' in note:
                     pass 
                 if 'labels' in note:
