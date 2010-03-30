@@ -171,16 +171,17 @@ class Api(object):
         '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
 
         To post a note:
-        >> r = api.post_note("#harry My note just got posted")
+        >> r = api.post_note("Harry says snaptic is da bomb")
         >> print r
+        {
         "notes":[
             {
-            "created_at": "2010-03-10T05:04:53.357Z",
-            "modified_at": "2010-03-10T05:04:53.357Z",
+            "created_at": "2010-03-30T05:12:15.395Z",
+            "modified_at": "2010-03-30T05:12:19.260Z",
             "reminder_at": "",
-            "id": "1422194",
-            "text": "#harry My third note just got uploaded",
-            "summary": "#harry My note just got posted",
+            "id": "1760036",
+            "text": "Harry says snaptic is da bomb",
+            "summary": "Harry says snaptic is da bomb",
             "source": "3banana",
             "source_url": "https://snaptic.com/",
             "user": {
@@ -188,15 +189,15 @@ class Api(object):
                 "user_name": "ht"
             },
             "children": "0",
-            "labels": [
-                "harry" ],
+            "labels": {},
+            "tags": {},
             "location": {}
-            }   ,
-        {"hi":"a little wave"}]}
+            }
+        ]}
 
        To delete a note:
        >> id        = api.notes[1].note_id
-       >> api.delete_note_with_id(id)
+       >> api.delete_note(id)
 
        To add an image to the above note
        >> id        = api.notes[1].note_id
@@ -250,7 +251,7 @@ class Api(object):
         self._username = username
         self._password = password
 
-    def load_image_and_add_to_note_with_id(self, filename=None, id=None):
+    def load_image_and_add_to_note_with_id(self, filename, id):
         if filename and id:
             try: 
                 fin     = open(filename, 'r')
@@ -286,8 +287,8 @@ class Api(object):
         response = handler.getresponse()
         data     = response.read()
         handler.close()
-        if int(response.status) != 200:
-            raise SnapticError("Error posting files ", int(response.status), data)
+        if response.status != 200:
+            raise SnapticError("Error posting files ", response.status, data)
 
     def _encode_multi_part_form_data(self, files):
         """
@@ -312,17 +313,14 @@ class Api(object):
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-    def delete_note_with_id(self, id=None):
-        if id:
-            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + id
-            handler         = self._basic_auth_request(page, method=self.HTTP_DELETE)
-            response        = handler.getresponse()
-            handler.close()
-            if int(response.status) != 200:
-                data        = response.read()
-                raise SnapticError("Http error deleting note", int(response.status), data)
-        else:
-            raise SnapticError("Error deleting note, no id passed")
+    def delete_note(self, id):
+        page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + id
+        handler         = self._basic_auth_request(page, method=self.HTTP_DELETE)
+        response        = handler.getresponse()
+        handler.close()
+        if response.status != 200:
+            data        = response.read()
+            raise SnapticError("Http error deleting note", response.status, data)
 
     def edit_note(self, note=None):
         '''
@@ -336,8 +334,8 @@ class Api(object):
             response       = handle.getresponse()
             data           = response.read()
             handle.close()
-            if int(response.status) != 200:
-                raise SnapticError("Http error editing note ", int(response.status), data)
+            if response.status != 200:
+                raise SnapticError("Http error editing note ", response.status, data)
             return data
         else:
             raise SnapticError("Error editing note, no note value passed")
@@ -351,8 +349,8 @@ class Api(object):
             response    = handle.getresponse()
             data        = response.read()
             handle.close()
-            if int(response.status) != 200:
-                raise SnapticError("Http error posting note ", int(response.status), data)
+            if response.status != 200:
+                raise SnapticError("Http error posting note ", response.status, data)
             return data
         else:
             raise SnapticError("Error posting note, no note value passed")
@@ -395,14 +393,14 @@ class Api(object):
         self._notes  = self._parse_notes(json_notes)
         return self._notes
 
-    def get_user_info(self):
+    def get_user(self):
         '''
         Get user info
         '''
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_USER_JSON
         user_info    = self._fetch_url(url)
         self._parse_user_info(user_info)
-
+        return self._user
 
     @Property
     def json():
@@ -427,8 +425,8 @@ class Api(object):
         response      = handler.getresponse()
         data          = response.read()
         handler.close()
-        if int(response.status) != 200:
-            raise SnapticError("Http error", int(response.status), data)
+        if response.status != 200:
+            raise SnapticError("Http error", response.status, data)
         return data
 
     def _make_basic_auth_headers(self, username, password):
@@ -465,6 +463,8 @@ class Api(object):
 
         if 'user' in user_info:
             self._user = User(user_info['user']['id'], user_info['user']['user_name'], user_info['user']['created_at'], user_info['user']['auth_token'], user_info['user']['email'])
+        else:
+            SnapticError("Error no user key found in source JSON passed to _parse_user_info")
 
     def _parse_notes( self, source, get_image_data=False):
         '''
@@ -483,7 +483,7 @@ class Api(object):
             if 'id' in note:
                 if 'user' in note:
                     if self._user == None:
-                        self. get_user_info()
+                        self. get_user()
                         user = self._user.id
                     user = self._user.id
                 if 'location' in note:
