@@ -262,7 +262,7 @@ class Api(object):
         else:
             raise SnapticError("Error problem occured with one of the variables passed to LoadImageAndAddToNoteWithID, filename: %s, id: %s." % (filename, id))
 
-    def add_image_to_note_with_id(self, filename=None, data=None, id=None):
+    def add_image_to_note_with_id(self, filename, data, id):
         if data and id and filename:
             page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
             return self._post_multi_part(self._url, page, [("image", filename, data)])
@@ -322,7 +322,7 @@ class Api(object):
             data        = response.read()
             raise SnapticError("Http error deleting note", response.status, data)
 
-    def edit_note(self, note=None):
+    def edit_note(self, note):
         '''
         edit text/other in the note object then pass it back in to post
         '''
@@ -340,7 +340,7 @@ class Api(object):
         else:
             raise SnapticError("Error editing note, no note value passed")
 
-    def post_note(self, note=None):
+    def post_note(self, note):
         if note: #Update this to use and actual note -htormey
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             params      = urlencode(dict(text=note))
