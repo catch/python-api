@@ -256,22 +256,22 @@ class Api(object):
         self._password = password
 
     def load_image_and_add_to_note_with_id(self, filename, id):
-        if filename and id:
-            try: 
-                fin     = open(filename, 'r')
-                data    = fin.read()
-                self.add_image_to_note_with_id(filename, data, id)
-            except IOError:
-                raise SnapticError("Error reading filename")
-        else:
-            raise SnapticError("Error problem occured with one of the variables passed to LoadImageAndAddToNoteWithID, filename: %s, id: %s." % (filename, id))
+        '''
+        load image from filename and append to note.
+        '''
+        try: 
+            fin     = open(filename, 'r')
+            data    = fin.read()
+            self.add_image_to_note_with_id(filename, data, id)
+        except IOError:
+            raise SnapticError("Error reading filename")
 
     def add_image_to_note_with_id(self, filename, data, id):
-        if data and id and filename:
-            page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
-            return self._post_multi_part(self._url, page, [("image", filename, data)])
-        else:
-            raise SnapticError("Error problem occured with variables passed to AddImageToNoteWithID filename: %s, id: %s " % (filename, id))
+        '''
+        add image data to note
+        '''
+        page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
+        return self._post_multi_part(self._url, page, [("image", filename, data)])
 
     def _post_multi_part(self, host, selector, files):
         """
