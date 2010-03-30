@@ -216,6 +216,9 @@ class Api(object):
        >> fout = open(filename, "wb")
        >> fout.write(d)
        >> fout.close()
+
+       To get a json object of a users tags
+       >> api.get_tags()
     '''
 
     API_SERVER                  = "api.snaptic.com"
@@ -224,6 +227,7 @@ class Api(object):
     HTTP_POST                   = "POST"
     HTTP_DELETE                 = "DELETE"
     API_ENDPOINT_NOTES_JSON     = "/notes.json"
+    API_ENDPOINT_TAGS_JSON      = "/tags/tags.json"
     API_ENDPOINT_NOTES          = "/notes/"
     API_ENDPOINT_IMAGES         = "/images/"
     API_ENDPOINT_IMAGES_VIEW    = "/viewImage.action?viewNodeId="
@@ -326,44 +330,36 @@ class Api(object):
         '''
         edit text/other in the note object then pass it back in to post
         '''
-        if note: #Maybe check for attributes like id or is of type note? -htormey
-            headers        = { 'Content-type' : "application/x-www-form-urlencoded" }
-            params         = urlencode(note.dictionary)
-            page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
-            handle         = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
-            response       = handle.getresponse()
-            data           = response.read()
-            handle.close()
-            if response.status != 200:
-                raise SnapticError("Http error editing note ", response.status, data)
-            return data
-        else:
-            raise SnapticError("Error editing note, no note value passed")
+
+        headers        = { 'Content-type' : "application/x-www-form-urlencoded" }
+        params         = urlencode(note.dictionary)
+        page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
+        handle         = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
+        response       = handle.getresponse()
+        data           = response.read()
+        handle.close()
+        if response.status != 200:
+            raise SnapticError("Http error editing note ", response.status, data)
+        return data
 
     def post_note(self, note):
-        if note: #Update this to use and actual note -htormey
-            headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
-            params      = urlencode(dict(text=note))
-            page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
-            handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
-            response    = handle.getresponse()
-            data        = response.read()
-            handle.close()
-            if response.status != 200:
-                raise SnapticError("Http error posting note ", response.status, data)
-            return data
-        else:
-            raise SnapticError("Error posting note, no note value passed")
+        headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
+        params      = urlencode(dict(text=note))
+        page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
+        handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
+        response    = handle.getresponse()
+        data        = response.read()
+        handle.close()
+        if response.status != 200:
+            raise SnapticError("Http error posting note ", response.status, data)
+        return data
 
     def get_image_with_id(self, id):
         '''
         Get image data using the following id
         '''
-        if id:
-            url = self.API_ENDPOINT_IMAGES_VIEW  + id
-            return self._fetch_url(url)
-        else:
-            raise SnapticError("Error user id not set, try calling GetNotes.")
+        url = self.API_ENDPOINT_IMAGES_VIEW  + id
+        return self._fetch_url(url)
 
     def get_user_id(self):
         '''
@@ -419,6 +415,34 @@ class Api(object):
         url         = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         self._json  = self._fetch_url(url)
         return self._json
+
+    def get_tags(self):
+        '''
+        Fetch json object containing tags from users account
+        '''
+        url         = "/" + self.API_VERSION + API_ENDPOINT_TAGS_JSON
+        tags        = self._fetch_url(url)
+        return tags
+
+    #Work in progress API, don't use may change  -htormey
+    def get_cursor(self, from_id):
+        '''
+        Establish a cursor for the purpose of pagination, starting from note id from_id
+        see: http://wiki.github.com/snaptic/docs-api/snaptic-rest-api
+        '''
+        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + from_id + ".json?cursor=-1"
+        cursor      = self._fetch_url(url)
+        return cursor
+
+    def get_next_cursor(self, from_id, cursor_pos):
+        '''
+        After you haved established a cursor for the purpose of pagination, you can move to the next note using
+        this call
+        '''
+        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + from_id + ".json?cursor="+ str(cursor_po)
+        cursor      = self._fetch_url(url)
+        return cursor
+    #End work in progress API -htormey
 
     def _fetch_url(self, url):
         handler       = self._basic_auth_request(url)
