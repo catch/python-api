@@ -16,7 +16,7 @@
 '''A library that provides a python interface to the Snaptic API'''
 
 __author__ = 'harry@p2presearch.com'
-__version__ = '0.3-devel'
+__version__ = '0.4-devel'
 
 import mimetypes
 import base64
@@ -257,7 +257,7 @@ class Api(object):
 
     def load_image_and_add_to_note_with_id(self, filename, id):
         '''
-        load image from filename and append to note.
+        Load image from filename and append to note.
         '''
         try: 
             fin     = open(filename, 'r')
@@ -268,7 +268,7 @@ class Api(object):
 
     def add_image_to_note_with_id(self, filename, data, id):
         '''
-        add image data to note
+        Add image data to note
         '''
         page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
         return self._post_multi_part(self._url, page, [("image", filename, data)])
@@ -296,7 +296,7 @@ class Api(object):
 
     def _encode_multi_part_form_data(self, files):
         """
-        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Files is a sequence of (name, filename, value) elements for data to be uploaded as files
         Return (content_type, body) ready for httplib.HTTPConnection instance
         """
         BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
@@ -317,41 +317,36 @@ class Api(object):
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-    def delete_note(self, id):
-        page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + id
-        handler         = self._basic_auth_request(page, method=self.HTTP_DELETE)
-        response        = handler.getresponse()
-        handler.close()
-        if response.status != 200:
-            data        = response.read()
-            raise SnapticError("Http error deleting note", response.status, data)
+    def delete_note(self, id):#Change this to just take a note
+        return self._request(self.HTTP_DELETE, id)
 
     def edit_note(self, note):
-        '''
-        edit text/other in the note object then pass it back in to post
-        '''
-
-        headers        = { 'Content-type' : "application/x-www-form-urlencoded" }
-        params         = urlencode(note.dictionary)
-        page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
-        handle         = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
-        response       = handle.getresponse()
-        data           = response.read()
-        handle.close()
-        if response.status != 200:
-            raise SnapticError("Http error editing note ", response.status, data)
-        return data
+        return self._request(self.HTTP_POST, note)
 
     def post_note(self, note):
-        headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
-        params      = urlencode(dict(text=note))
-        page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
-        handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
+        return self._request(self.HTTP_POST, note) #change this to note_text to be a little clearer -htormey
+
+    def _request(self, http_method, note): #Clean this up a little -htormey
+        if http_method == self.HTTP_POST:
+            headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
+            if isinstance(note, Note):
+                #Edit an existing note
+                params         = urlencode(note.dictionary)
+                page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
+            else:
+                params      = urlencode(dict(text=note))
+                page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
+            handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
+        elif http_method == self.HTTP_DELETE:
+            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note
+            handle         = self._basic_auth_request(page, method=self.HTTP_DELETE)
+ 
         response    = handle.getresponse()
         data        = response.read()
         handle.close()
+
         if response.status != 200:
-            raise SnapticError("Http error posting note ", response.status, data)
+            raise SnapticError("Http error posting/editing/deleting note ", response.status, data)
         return data
 
     def get_image_with_id(self, id):
