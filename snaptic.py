@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Harry Tormey <harry@p2presearch.com>
+# Copyright (c) 2010 Harry Tormey <harry@snaptic.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
 
 '''A library that provides a python interface to the Snaptic API'''
 
-__author__ = 'harry@p2presearch.com'
+__author__ = 'harry@snaptic.com'
 __version__ = '0.4-devel'
 
 import mimetypes
@@ -232,6 +232,7 @@ class Api(object):
     API_ENDPOINT_IMAGES         = "/images/"
     API_ENDPOINT_IMAGES_VIEW    = "/viewImage.action?viewNodeId="
     API_ENDPOINT_USER_JSON      = "/user.json"
+    API_ENDPOINT_CURSOR         = "?cursor="
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
         self._url       = url
@@ -384,6 +385,36 @@ class Api(object):
         self._notes  = self._parse_notes(json_notes)
         return self._notes
 
+    def get_notes_from_cursor(self, cursor_position):
+        '''
+        Get a batch of upto 20 notes from a given cursor position. See
+        description given for json_cursor for further details on how 
+        cursors work with snaptic.
+        '''
+        json_notes   = self.json_cursor(cursor_position)
+        notes  = self._parse_notes(json_notes)
+        return notes
+
+    def get_cursor_information(self, cursor_position):
+        '''
+        Return dictionary containing previous_cursor, next_cursor and note count
+        for a given cursor_position. This information can be used to calculate
+        how to navigate through a users notes. See json_cursor for further details 
+        on how cursors work with snaptic.
+        '''
+        json_notes   = self.json_cursor(cursor_position)
+        return self._parse_cursor_info(json_notes)
+
+    def _parse_cursor_info(self, source):
+        '''
+        Parse cursor information with notes returned from snaptic.
+        '''
+        cursor_info   = json.loads(source)
+        if 'next_cursor' in cursor_info and 'previous_cursor' in cursor_info and 'count' in cursor_info:
+            return {"previous_cursor": cursor_info['previous_cursor'], "next_cursor": cursor_info['next_cursor'], "count": cursor_info['count'] }
+        else:
+            SnapticError("Error keys missing from source JSON passed to _parse_cursor_info")
+
     def get_user(self):
         '''
         Get user info
@@ -419,25 +450,16 @@ class Api(object):
         tags        = self._fetch_url(url)
         return tags
 
-    #Work in progress API, don't use may change  -htormey
-    def get_cursor(self, from_id):
+    def json_cursor(self, cursor_position):
         '''
-        Establish a cursor for the purpose of pagination, starting from note id from_id
-        see: http://wiki.github.com/snaptic/docs-api/snaptic-rest-api
+        Return batches of 20 notes in JSON format from a given cursor position i.e -1, 1,
+        etc. For example: -1 returns the most recent 20 notes, 1 returns the previous 20
+        before that, etc. One exeption to note is that 0 returns a JSON object for all
+        notes in a given account.
         '''
-        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + from_id + ".json?cursor=-1"
+        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON + self.API_ENDPOINT_CURSOR + str(cursor_position)
         cursor      = self._fetch_url(url)
         return cursor
-
-    def get_next_cursor(self, from_id, cursor_pos):
-        '''
-        After you haved established a cursor for the purpose of pagination, you can move to the next note using
-        this call
-        '''
-        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + from_id + ".json?cursor="+ str(cursor_po)
-        cursor      = self._fetch_url(url)
-        return cursor
-    #End work in progress API -htormey
 
     def _fetch_url(self, url):
         handler       = self._basic_auth_request(url)

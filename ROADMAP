@@ -1,3 +1,13 @@
+0.4-devel:
+-Futher code clean up.
+-Get user_info
+-Get tags.
+-Rewrite to be more pythonic.
+-Write function to fetch just user details
+-Clean up accessors like /v1/images
+-Implement edit note.
+-Start working on pagenation
+
 0.3-devel:
 
 -Implement delete note.
@@ -11,11 +21,7 @@
 
 TODO:
 -Write function to fetch just one note from id
--Write function to fetch just user details
--Clean up accessors like /v1/images
 -Flesh out code for handling location in notes
--Implement edit note.
--Start working on pagenation
 -Investigate writing some unit tests with nose.
 -Start writing docs with pydoc
 -Migrate PyQT demo application to use library
