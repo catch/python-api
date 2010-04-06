@@ -13,7 +13,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-'''A library that provides a python interface to the Snaptic API'''
+'''A python interface to the Snaptic API'''
 
 __author__ = 'harry@snaptic.com'
 __version__ = '0.4-devel'
@@ -88,13 +88,15 @@ class Image(object):
     '''A class representing the Image structure which is an attribute of a note retruned via the Snaptic API.
 
      The Image structure exposes the following properties:
-       image.type
-       image.md5
-       image.id
-       image.width
-       image.height
-       image.src
-       image.data
+
+        image.type
+        image.md5
+        image.id
+        image.width
+        image.height
+        image.src
+        image.data
+
     '''
 
     def __init__(self, type="image", md5=None, id=None, revision_id=None, width=0, height=0, src=None, data=None):
@@ -110,21 +112,24 @@ class Image(object):
 class Note(object):
     '''A class representing the Note structure used by the Snaptic API.
 
-     The Note structure exposes the following properties:
-       note.created_at
-       note.modified_at
-       note.reminder_at
-       note.note_id
-       note.text
-       note.summary
-       note.source
-       note.source_url
-       note.user
-       note.children
-       note.media
-       note.labels
-       note.location
-       note.has_media
+        The Note structure exposes the following properties:
+
+            note.created_at
+            note.modified_at
+            note.reminder_at
+            note.note_id
+            note.text
+            note.summary
+            note.source
+            note.source_url
+            note.user
+            note.children
+            note.media
+            note.labels
+            note.location
+            note.has_media # read only
+            note.dictionary # read only
+
     '''
 
     def __init__(self, created_at, modified_at, reminder_at, note_id, text,
@@ -145,80 +150,106 @@ class Note(object):
 
     @property
     def has_media(self):
+        '''
+        Check to see if Note has any media (images) associated with it.
+
+        Returns:
+            True/False
+        '''
         return len(self.media) > 0
 
     @property
     def dictionary(self):
         '''
-        return a dictionary version of the note
+        Returns text from the note packaged as a dictionary.
+
+        Returns: 
+            A dictionary containing selected attributes from the note.
         '''
         #Working on adding dates/location/media and other fields to this dictionary. Right now you can just update text. -htormey
         return dict(text=self.text)
 
 class Api(object):
-    '''A python interface into the Snaptic API
+    '''
+       Example usage:
 
-    Example usage:
-        To create an instance of the snaptic.Api class with basic authentication:
-        >> import snaptic
-        >> api = snaptic.Api("username", "password")
+           To create an instance of the snaptic.Api class with basic authentication:
 
-        To fetch users notes and print an attribute:
-        >> print [n.created_at for n in api.notes]
+               >>> import snaptic
+               >>> api = snaptic.Api("username", "password")
 
-        ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
-        '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
-        '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
+           To fetch users notes and print an attribute:
 
-        To post a note:
-        >> r = api.post_note("Harry says snaptic is da bomb")
-        >> print r
-        {
-        "notes":[
-            {
-            "created_at": "2010-03-30T05:12:15.395Z",
-            "modified_at": "2010-03-30T05:12:19.260Z",
-            "reminder_at": "",
-            "id": "1760036",
-            "text": "Harry says snaptic is da bomb",
-            "summary": "Harry says snaptic is da bomb",
-            "source": "3banana",
-            "source_url": "https://snaptic.com/",
-            "user": {
-                "id": "913202",
-                "user_name": "ht"
-            },
-            "children": "0",
-            "labels": {},
-            "tags": {},
-            "location": {}
-            }
-        ]}
+               >>> [n.created_at for n in api.notes]
+               ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
+               '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
+               '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
 
-       To delete a note:
-       >> id        = api.notes[1].note_id
-       >> api.delete_note(id)
+           To post a note:
 
-       To add an image to the above note
-       >> id        = api.notes[1].note_id
-       >> api.load_image_and_add_to_note_with_id("myimage.jpg", id)
+               >>> api.post_note("Harry says snaptic is da bomb")
+               {
+               "notes":[
+                   {
+                   "created_at": "2010-04-06T22:59:12.093Z",
+                   "modified_at": "2010-04-06T22:59:12.093Z",
+                   "reminder_at": "",
+                   "id": "1926387",
+                   "text": "Harry says snaptic is da bomb",
+                   "summary": "Harry says snaptic is da bomb",
+                   "source": "3banana",
+                   "source_url": "https://snaptic.com/",
+                   "user": {
+                       "id": "1813083",
+                       "user_name": "harry12"
+                   },
+                   "children": "0",
+                   "labels": {},
+                   "tags": {},
+                   "location": {}
+                   }
+               ]}
 
-       To edit a note:
-       >> n[0].text='Harry says coolio'
-       >> api.edit_note(n[0])
+           To delete a note:
 
-       To download image data from a note:
-       >> api.notes[1].has_media
-       True
-       >> id = api.notes[1].note_id
-       >> d = api.get_image_with_id(id)
-       >> filename = "/Users/harrytormey/%s.jpg" % id
-       >> fout = open(filename, "wb")
-       >> fout.write(d)
-       >> fout.close()
+               >>> id        = api.notes[1].note_id
+               >>> api.delete_note(id)
 
-       To get a json object of a users tags
-       >> api.get_tags()
+           To add an image to the above note
+
+               >>> id        = api.notes[1].note_id
+               >>> api.load_image_and_add_to_note_with_id("myimage.jpg", id)
+
+           To edit a note:
+
+               >>> n[0].text='Harry says coolio'
+               >>> api.edit_note(n[0])
+
+           To download image data from a note:
+
+              >>> api.notes[1].has_media
+              True
+              >>> id = api.notes[1].note_id
+              >>> d = api.get_image_with_id(id)
+              >>> filename = "/Users/harrytormey/%s.jpg" % id
+              >>> fout = open(filename, "wb")
+              >>> fout.write(d)
+              >>> fout.close()
+
+           To get a json object of a users tags
+
+             >>> api.get_tags()
+             {
+             "tags":[
+                {
+                    "name":"food",
+                    "count":"1",
+                },
+                {
+                    "name":"ice",
+                    "count":"1",
+                },
+             ]}
     '''
 
     API_SERVER                  = "api.snaptic.com"
@@ -250,8 +281,10 @@ class Api(object):
         Set username/password
 
         Args:
-            username: snaptic username
-            password: snaptic password
+            username: 
+                snaptic username
+            password: 
+                snaptic password
         '''
         self._username = username
         self._password = password
@@ -446,7 +479,7 @@ class Api(object):
         '''
         Fetch json object containing tags from users account
         '''
-        url         = "/" + self.API_VERSION + API_ENDPOINT_TAGS_JSON
+        url         = "/" + self.API_VERSION + self.API_ENDPOINT_TAGS_JSON
         tags        = self._fetch_url(url)
         return tags
 
