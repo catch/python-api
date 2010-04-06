@@ -1,0 +1,20 @@
+.. snaptic documentation master file, created by
+   sphinx-quickstart on Tue Apr  6 11:18:53 2010.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+snaptic (version 0.4)
+===================================
+
+A library that provies a python inferface to the Snaptic API
+
+
+.. toctree::
+   :maxdepth: 2
+
+Classes
+==================
+
+.. automodule:: snaptic
+   :members: Api, Note, User, Image, SnapticError
+
