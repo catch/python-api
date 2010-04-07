@@ -112,24 +112,23 @@ class Image(object):
 class Note(object):
     '''A class representing the Note structure used by the Snaptic API.
 
-        The Note structure exposes the following properties:
+    The Note structure exposes the following properties:
 
-            note.created_at
-            note.modified_at
-            note.reminder_at
-            note.note_id
-            note.text
-            note.summary
-            note.source
-            note.source_url
-            note.user
-            note.children
-            note.media
-            note.labels
-            note.location
-            note.has_media # read only
-            note.dictionary # read only
-
+        note.created_at
+        note.modified_at
+        note.reminder_at
+        note.note_id
+        note.text
+        note.summary
+        note.source
+        note.source_url
+        note.user
+        note.children
+        note.media
+        note.labels
+        note.location
+        note.has_media # read only
+        note.dictionary # read only
     '''
 
     def __init__(self, created_at, modified_at, reminder_at, note_id, text,
@@ -266,6 +265,15 @@ class Api(object):
     API_ENDPOINT_CURSOR         = "?cursor="
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
+        '''
+        Args:
+            username: The username of the snaptic account.
+            password: The password of the snaptic account.
+            url: The url of the api server which will handle the http(s) API requests.
+            use_ssl: Use ssl for basic auth or not.
+            port: The port to make http(s) requests on.
+            timeout: number of seconds to wait before giving up on a request.
+        '''
         self._url       = url
         self._use_ssl   = use_ssl
         self._port      = port
@@ -276,7 +284,6 @@ class Api(object):
         self.set_credentials(username, password)
 
     def set_credentials(self, username, password):
-
         '''
         Set username/password
 
@@ -292,6 +299,10 @@ class Api(object):
     def load_image_and_add_to_note_with_id(self, filename, id):
         '''
         Load image from filename and append to note.
+
+        Args:
+            filename: filename of image to load data from.
+            id: id of note to which image will be appended.
         '''
         try: 
             fin     = open(filename, 'r')
@@ -302,7 +313,14 @@ class Api(object):
 
     def add_image_to_note_with_id(self, filename, data, id):
         '''
-        Add image data to note
+        Add image data to note.
+
+        Args:
+            filename: filename of image.
+            data: loaded image data to be appended to note.
+            id: id of note to which image data will be appended.
+        Returns:
+            The server's response page.
         '''
         page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
         return self._post_multi_part(self._url, page, [("image", filename, data)])
@@ -310,8 +328,13 @@ class Api(object):
     def _post_multi_part(self, host, selector, files):
         """
         Post files to an http host as multipart/form-data.
-        files is a sequence of (name, filename, value) elements for data to be uploaded as files
-        Return the server's response page.
+
+        Args:
+            host: server to send request to
+            selector: API endpoint to send to the server
+            files: sequence of (name, filename, value) elements for data to be uploaded as files
+        Returns:
+            Return the server's response page.
         """
         content_type, body = self._encode_multi_part_form_data(files)
         handler = httplib.HTTPConnection(host)
@@ -330,8 +353,12 @@ class Api(object):
 
     def _encode_multi_part_form_data(self, files):
         """
-        Files is a sequence of (name, filename, value) elements for data to be uploaded as files
-        Return (content_type, body) ready for httplib.HTTPConnection instance
+        Encode multi part form data to be posted to server.
+
+        Args:
+            Files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return:
+            sequence of (content_type, body) ready for httplib.HTTPConnection instance
         """
         BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
         CRLF = '\r\n'
@@ -349,18 +376,58 @@ class Api(object):
         return content_type, body
 
     def _get_content_type(self, filename):
+        """
+        Attempt to guess mimetype of file.
+
+        Args:
+            filename: filename to be guessed.
+        Returns:
+            File type or default value.
+        """
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
     def delete_note(self, id):#Change this to just take a note
+        """
+        Delete a note.
+
+        Args:
+            id: id of note to be deleted.
+        Returns:
+            The server's response page.
+        """
         return self._request(self.HTTP_DELETE, id)
 
     def edit_note(self, note):
+        """
+        Edit a note.
+
+        Args:
+            note: note object to be edited
+        Returns:
+            The server's response page.
+        """
         return self._request(self.HTTP_POST, note)
 
     def post_note(self, note):
+        """
+        Post a note.
+
+        Args:
+            note: text of note to be posted.
+        Returns:
+            The server's response page.
+        """
         return self._request(self.HTTP_POST, note) #change this to note_text to be a little clearer -htormey
 
     def _request(self, http_method, note): #Clean this up a little -htormey
+        """
+        Perform a http request on a note
+
+        Args:
+            http_metod: what kind of http request is being made (i.e POST/DELETE/GET)
+        Returns:
+            The server's response page.
+        """
         if http_method == self.HTTP_POST:
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             if isinstance(note, Note):
@@ -385,7 +452,12 @@ class Api(object):
 
     def get_image_with_id(self, id):
         '''
-        Get image data using the following id
+        Get image data associated with a given id.
+
+        Args:
+            id: id of image to be fetched.
+        Returns:
+            Data associated with image id.
         '''
         url = self.API_ENDPOINT_IMAGES_VIEW  + id
         return self._fetch_url(url)
@@ -393,6 +465,9 @@ class Api(object):
     def get_user_id(self):
         '''
         Get ID of API user.
+
+        Returns: 
+            Id of snaptic user associated with Api instance.
         '''
         if self._user:
             return self._user.id
@@ -411,7 +486,10 @@ class Api(object):
 
     def get_notes(self):
         '''
-        Get notes and update the cache
+        Get notes and update the Api's internal cache.
+
+        Returns:
+            A list of Note objects from the snaptic users account.
         '''
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         json_notes   = self._fetch_url(url)
@@ -423,6 +501,11 @@ class Api(object):
         Get a batch of upto 20 notes from a given cursor position. See
         description given for json_cursor for further details on how 
         cursors work with snaptic.
+
+        Args:
+            cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20)
+        Returns:
+            A list of note objects based on the contents of the users account.
         '''
         json_notes   = self.json_cursor(cursor_position)
         notes  = self._parse_notes(json_notes)
@@ -430,10 +513,13 @@ class Api(object):
 
     def get_cursor_information(self, cursor_position):
         '''
-        Return dictionary containing previous_cursor, next_cursor and note count
-        for a given cursor_position. This information can be used to calculate
-        how to navigate through a users notes. See json_cursor for further details 
-        on how cursors work with snaptic.
+        Gets information which can be used to calculate to navigate through a users notes. See 
+        json_cursor for further details on how cursors work with snaptic.
+
+        Args:
+            cursor_position: cursor position you want to find out about.
+        Returns:
+            A dictionary containing previous_cursor, next_cursor and note count.
         '''
         json_notes   = self.json_cursor(cursor_position)
         return self._parse_cursor_info(json_notes)
@@ -441,6 +527,11 @@ class Api(object):
     def _parse_cursor_info(self, source):
         '''
         Parse cursor information with notes returned from snaptic.
+
+        Args:
+            source: A json object consisting of notes and cursor information
+        Returns:
+            A dictionary containing previous_cursor, next_cursor and note count.
         '''
         cursor_info   = json.loads(source)
         if 'next_cursor' in cursor_info and 'previous_cursor' in cursor_info and 'count' in cursor_info:
@@ -450,7 +541,10 @@ class Api(object):
 
     def get_user(self):
         '''
-        Get user info
+        Get user info.
+
+        Returns:
+            A user object.
         '''
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_USER_JSON
         user_info    = self._fetch_url(url)
@@ -470,6 +564,9 @@ class Api(object):
     def get_json(self):
         '''
         Get json object and update the cache
+
+        Returns:
+            A json object representing all notes in a users account.
         '''
         url         = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         self._json  = self._fetch_url(url)
@@ -478,6 +575,9 @@ class Api(object):
     def get_tags(self):
         '''
         Fetch json object containing tags from users account
+
+        Returns:
+            A json object containing tags and related information (number of notes per tag, etc).
         '''
         url         = "/" + self.API_VERSION + self.API_ENDPOINT_TAGS_JSON
         tags        = self._fetch_url(url)
@@ -485,16 +585,29 @@ class Api(object):
 
     def json_cursor(self, cursor_position):
         '''
-        Return batches of 20 notes in JSON format from a given cursor position i.e -1, 1,
+        Get batches of 20 notes in JSON format from a given cursor position i.e -1, 1,
         etc. For example: -1 returns the most recent 20 notes, 1 returns the previous 20
         before that, etc. One exeption to note is that 0 returns a JSON object for all
         notes in a given account.
+
+        Args:
+            cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20)
+        Returns:
+            A json object containing notes from cursor position requested
         '''
         url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON + self.API_ENDPOINT_CURSOR + str(cursor_position)
         cursor      = self._fetch_url(url)
         return cursor
 
     def _fetch_url(self, url):
+        '''
+        Perform a basic auth request on a given snaptic API endpoint.
+
+        Args:
+            url: Snaptic Api endpoint (i.e /v1/notes.json etc)
+        Returns:
+            The server's response page.
+        '''
         handler       = self._basic_auth_request(url)
         response      = handler.getresponse()
         data          = response.read()
@@ -504,6 +617,15 @@ class Api(object):
         return data
 
     def _make_basic_auth_headers(self, username, password):
+        '''
+        Encode headers for basic auth request.
+
+        Args:
+            username: snaptic username to be used.
+            password: password to be used.
+        Returns:
+            Dictionary with encoded basic auth values.
+        '''
         if username and password:
             headers = dict(Authorization="Basic %s"
                     %(base64.b64encode("%s:%s" %(username, password))))
@@ -512,8 +634,18 @@ class Api(object):
         return headers
 
     def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
-        ''' Make a HTTP request with basic auth header and supplied method.
-        Defaults to operating over SSL. '''
+        ''' 
+        Make a HTTP request with basic auth header and supplied method.
+        Defaults to operating over SSL. 
+
+        Args:
+            path: Snaptic API endpoint
+            metthod: which http method to use (PUT/DELETE/GET)
+            headers: Additional header to use with request.
+            params: Other parameters to use
+        Returns:
+            The server's response page.
+        '''
         h           = self._make_basic_auth_headers(self._username, self._password)
         h.update(headers)
         if self._use_ssl:
@@ -531,7 +663,12 @@ class Api(object):
 
     def _parse_user_info(self, source):
         '''
-        parse JSON user returned from snaptic, instantiate a User object from it.
+        Parse JSON user returned from snaptic, instantiate a User object from it.
+
+        Args:
+            source: Json object representing a user
+        Returns:
+            A User object.
         '''
         user_info   = json.loads(source)
 
@@ -543,6 +680,12 @@ class Api(object):
     def _parse_notes( self, source, get_image_data=False):
         '''
         parse JSON notes returned from snaptic, instantiate a list of note objects from it.
+
+        Args:
+            source: A json object representing a list of notes.
+            get_images: if images are associated with notes, download them now.
+        Returns:
+            A list of note objects.
         '''
         notes       = []
         json_notes  = json.loads(source)
