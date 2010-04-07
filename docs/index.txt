@@ -3,18 +3,100 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-snaptic (version 0.4)
+python-snaptic
 ===================================
 
-A library that provies a python inferface to the Snaptic API
+*A python wrapper around the Snaptic API*
 
+Author: *Harry Tormey <harry@snaptic.com>*
+
+
+Introduction
+==================
+
+This library provides a pure python interface for the Snaptic API.
+
+Snaptic (https://snaptic.com/) provides a service that allows people to build cross platform productivity applications to
+capture, organize, and share information. Snaptic exposes a web services API (http://wiki.github.com/snaptic/docs-api/snaptic-rest-api) 
+which this library implements for python programmers.
+
+Build instructions
+===================
+
+**From source:**
+
+Install the dependencies:
+
+http://pypi.python.org/pypi/simplejson
+
+Download the latest python-snaptic library from:
+
+*todo: place holder, work out with NJO how we are going to do deployment of tar files. -htormey*
+
+Untar the source distribution and run:
+
+python setup.py install
+
+**Testing:**
+
+*todo: checkin unit tests for python api -htormey*
+
+Source code
+==================
+
+**View the trunk here:**
+
+http://github.com/snaptic/python-api
+
+Check out the latest version of the snaptic python API::
+
+  git clone git@github.com:snaptic/python-api.git
+  cd python-snaptic
+
+Documentation
+==================
+
+View the latest python-snaptic API documentation here:
 
 .. toctree::
    :maxdepth: 2
 
-Classes
+   api.txt
+
+Usage
 ==================
 
-.. automodule:: snaptic
-   :members: Api, Note, User, Image, SnapticError
+.. autoclass:: snaptic.Api
+
+Further information
+====================
+
+For more information on the Snaptic REST API see here:
+
+http://wiki.github.com/snaptic/docs-api/snaptic-rest-api
+
+Contributors
+==================
+
+Additional thanks to Niall O'Higgins, Casey Duncan.
+
+License
+==================
+
+::
+
+# Copyright (c) 2010 Harry Tormey <harry@snaptic.com>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
 
