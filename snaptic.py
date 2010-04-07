@@ -31,30 +31,42 @@ def Property(func):
     return property(**func())
 
 class SnapticError(Exception):
-  '''Base class for Snaptic errors'''
+  """
+  Base class for Snaptic errors.
+
+  The SnaptiError class exposes the following properties::
+
+    snaptic_error.message # read only
+    snaptic_error.status # read only
+    snaptic_error.response # read only
+  """
 
   @property
   def message(self):
-    '''Returns the first argument used to construct this error.'''
+    """Returns the first argument used to construct this error."""
     return self.args[0]
 
   @property
   def status(self):
-    '''Returns the HTTP status code used to construct this error.'''
+    """Returns the HTTP status code used to construct this error."""
     return self.args[1]
 
   @property
   def response(self):
-    '''Returns HTTP response body used to construct this error.'''
+    """Returns HTTP response body used to construct this error."""
     return self.args[2]
 
 class User(object):
-    '''A class representing the User structure used by the Snaptic API.
+    """
+    A class representing the User structure used by the Snaptic API.
 
-     The User structure exposes the following properties:
-       user.id
-       user.user_name
-    '''
+     The User class exposes the following properties::
+       user.id # read only
+       user.user_name # read only
+       user.created_at # read only
+       user.auth_token # read only
+       user.email # read only
+    """
 
     def __init__(self, id=None, user_name=None, created_at=None, auth_token=None, email=None):
         self._id             = id
@@ -85,9 +97,10 @@ class User(object):
 
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
-    '''A class representing the Image structure which is an attribute of a note retruned via the Snaptic API.
+    """
+    A class representing the Image structure which is an attribute of a note retruned via the Snaptic API.
 
-     The Image structure exposes the following properties:
+     The Image structure exposes the following properties::
 
         image.type
         image.md5
@@ -96,8 +109,7 @@ class Image(object):
         image.height
         image.src
         image.data
-
-    '''
+    """
 
     def __init__(self, type="image", md5=None, id=None, revision_id=None, width=0, height=0, src=None, data=None):
         self.type           = type
@@ -110,9 +122,10 @@ class Image(object):
         self.data           = data
 
 class Note(object):
-    '''A class representing the Note structure used by the Snaptic API.
+    """
+    A class representing the Note structure used by the Snaptic API.
 
-    The Note structure exposes the following properties:
+    The Note structure exposes the following properties::
 
         note.created_at
         note.modified_at
@@ -129,7 +142,7 @@ class Note(object):
         note.location
         note.has_media # read only
         note.dictionary # read only
-    '''
+    """
 
     def __init__(self, created_at, modified_at, reminder_at, note_id, text,
                  summary, source, source_url, user, children, media = [], labels = [], location = []):
@@ -149,27 +162,27 @@ class Note(object):
 
     @property
     def has_media(self):
-        '''
+        """
         Check to see if Note has any media (images) associated with it.
 
         Returns:
             True/False
-        '''
+        """
         return len(self.media) > 0
 
     @property
     def dictionary(self):
-        '''
+        """
         Returns text from the note packaged as a dictionary.
 
         Returns: 
             A dictionary containing selected attributes from the note.
-        '''
+        """
         #Working on adding dates/location/media and other fields to this dictionary. Right now you can just update text. -htormey
         return dict(text=self.text)
 
 class Api(object):
-    '''
+    """
        Example usage:
 
            To create an instance of the snaptic.Api class with basic authentication:
@@ -177,12 +190,25 @@ class Api(object):
                >>> import snaptic
                >>> api = snaptic.Api("username", "password")
 
-           To fetch users notes and print an attribute:
+           To fetch all users notes and print an attribute:
 
                >>> [n.created_at for n in api.notes]
                ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
                '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
                '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
+
+           To fetch a subset of a users notes use a cursor. To get the first 20 notes and print an attribute:
+
+               >>> [n.text for n in api.get_notes_from_cursor(-1)]
+               ['Harry says snaptic is da bomb #food #ice', 'Harry says snaptic is da bomb #food #ice', 'Harry says snaptic is da bomb', 'Harry says snaptic is da bomb', 'post number 99', 'post number 98', 
+               'post number 97', 'post number 96', 'post number 95', 'post number 94', 'post number 93', 'post number 92', 'post number 91', 'post number 90', 'post number 89', 'post number 88', 'post number 87', 
+               'post number 86', 'post number 85', 'post number 84']
+
+           To get the next 20 notes use cursor 1 (cursor 0 returns all notes in a users account):
+
+               >>> [n.text for n in api.get_notes_from_cursor(1)]
+               ['post number 83', 'post number 82', 'post number 81', 'post number 80', 'post number 79', 'post number 78', 'post number 77', 'post number 76', 'post number 75', 'post number 74', 'post number 73', 
+               'post number 72', 'post number 71', post number 70', 'post number 69', 'post number 68', 'post number 67', 'post number 66', 'post number 65', 'post number 64']
 
            To post a note:
 
@@ -249,7 +275,7 @@ class Api(object):
                     "count":"1",
                 },
              ]}
-    '''
+    """
 
     API_SERVER                  = "api.snaptic.com"
     API_VERSION                 = "v1"
@@ -265,7 +291,7 @@ class Api(object):
     API_ENDPOINT_CURSOR         = "?cursor="
 
     def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
-        '''
+        """
         Args:
             username: The username of the snaptic account.
             password: The password of the snaptic account.
@@ -273,7 +299,7 @@ class Api(object):
             use_ssl: Use ssl for basic auth or not.
             port: The port to make http(s) requests on.
             timeout: number of seconds to wait before giving up on a request.
-        '''
+        """
         self._url       = url
         self._use_ssl   = use_ssl
         self._port      = port
@@ -284,26 +310,27 @@ class Api(object):
         self.set_credentials(username, password)
 
     def set_credentials(self, username, password):
-        '''
+        """
         Set username/password
 
         Args:
             username: 
-                snaptic username
+                snaptic username.
             password: 
-                snaptic password
-        '''
+                snaptic password.
+        """
         self._username = username
         self._password = password
 
     def load_image_and_add_to_note_with_id(self, filename, id):
-        '''
+        """
         Load image from filename and append to note.
 
-        Args:
+        Args::
+
             filename: filename of image to load data from.
             id: id of note to which image will be appended.
-        '''
+        """
         try: 
             fin     = open(filename, 'r')
             data    = fin.read()
@@ -312,16 +339,18 @@ class Api(object):
             raise SnapticError("Error reading filename")
 
     def add_image_to_note_with_id(self, filename, data, id):
-        '''
+        """
         Add image data to note.
 
-        Args:
+        Args::
+
             filename: filename of image.
             data: loaded image data to be appended to note.
             id: id of note to which image data will be appended.
+
         Returns:
             The server's response page.
-        '''
+        """
         page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
         return self._post_multi_part(self._url, page, [("image", filename, data)])
 
@@ -329,10 +358,12 @@ class Api(object):
         """
         Post files to an http host as multipart/form-data.
 
-        Args:
+        Args::
+
             host: server to send request to
             selector: API endpoint to send to the server
             files: sequence of (name, filename, value) elements for data to be uploaded as files
+
         Returns:
             Return the server's response page.
         """
@@ -421,7 +452,7 @@ class Api(object):
 
     def _request(self, http_method, note): #Clean this up a little -htormey
         """
-        Perform a http request on a note
+        Perform a http request on a note.
 
         Args:
             http_metod: what kind of http request is being made (i.e POST/DELETE/GET)
@@ -451,24 +482,24 @@ class Api(object):
         return data
 
     def get_image_with_id(self, id):
-        '''
+        """
         Get image data associated with a given id.
 
         Args:
             id: id of image to be fetched.
         Returns:
             Data associated with image id.
-        '''
+        """
         url = self.API_ENDPOINT_IMAGES_VIEW  + id
         return self._fetch_url(url)
 
     def get_user_id(self):
-        '''
+        """
         Get ID of API user.
 
         Returns: 
-            Id of snaptic user associated with Api instance.
-        '''
+            Id of snaptic user associated with API instance.
+        """
         if self._user:
             return self._user.id
         else:
@@ -485,19 +516,19 @@ class Api(object):
         return locals()
 
     def get_notes(self):
-        '''
+        """
         Get notes and update the Api's internal cache.
 
         Returns:
             A list of Note objects from the snaptic users account.
-        '''
+        """
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         json_notes   = self._fetch_url(url)
         self._notes  = self._parse_notes(json_notes)
         return self._notes
 
     def get_notes_from_cursor(self, cursor_position):
-        '''
+        """
         Get a batch of upto 20 notes from a given cursor position. See
         description given for json_cursor for further details on how 
         cursors work with snaptic.
@@ -506,33 +537,33 @@ class Api(object):
             cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20)
         Returns:
             A list of note objects based on the contents of the users account.
-        '''
+        """
         json_notes   = self.json_cursor(cursor_position)
         notes  = self._parse_notes(json_notes)
         return notes
 
     def get_cursor_information(self, cursor_position):
-        '''
-        Gets information which can be used to calculate to navigate through a users notes. See 
-        json_cursor for further details on how cursors work with snaptic.
+        """
+        Gets information about cursor at a given position. See json_cursor for further 
+        details on how cursors work with snaptic.
 
         Args:
             cursor_position: cursor position you want to find out about.
         Returns:
             A dictionary containing previous_cursor, next_cursor and note count.
-        '''
+        """
         json_notes   = self.json_cursor(cursor_position)
         return self._parse_cursor_info(json_notes)
 
     def _parse_cursor_info(self, source):
-        '''
+        """
         Parse cursor information with notes returned from snaptic.
 
         Args:
             source: A json object consisting of notes and cursor information
         Returns:
             A dictionary containing previous_cursor, next_cursor and note count.
-        '''
+        """
         cursor_info   = json.loads(source)
         if 'next_cursor' in cursor_info and 'previous_cursor' in cursor_info and 'count' in cursor_info:
             return {"previous_cursor": cursor_info['previous_cursor'], "next_cursor": cursor_info['next_cursor'], "count": cursor_info['count'] }
@@ -540,12 +571,12 @@ class Api(object):
             SnapticError("Error keys missing from source JSON passed to _parse_cursor_info")
 
     def get_user(self):
-        '''
+        """
         Get user info.
 
         Returns:
             A user object.
-        '''
+        """
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_USER_JSON
         user_info    = self._fetch_url(url)
         self._parse_user_info(user_info)
@@ -553,7 +584,7 @@ class Api(object):
 
     @Property
     def json():
-        doc = "Json object of notes stored in account"
+        doc = "Json object of notes stored in account."
         def fget(self):
             if self._json:
                 return self._json #should I return json.load(sef._json) ? -htormey
@@ -562,52 +593,52 @@ class Api(object):
         return locals()
 
     def get_json(self):
-        '''
-        Get json object and update the cache
+        """
+        Get json object and update the cache.
 
         Returns:
             A json object representing all notes in a users account.
-        '''
+        """
         url         = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         self._json  = self._fetch_url(url)
         return self._json
 
     def get_tags(self):
-        '''
-        Fetch json object containing tags from users account
+        """
+        Fetch json object containing tags from users account.
 
         Returns:
             A json object containing tags and related information (number of notes per tag, etc).
-        '''
+        """
         url         = "/" + self.API_VERSION + self.API_ENDPOINT_TAGS_JSON
         tags        = self._fetch_url(url)
         return tags
 
     def json_cursor(self, cursor_position):
-        '''
+        """
         Get batches of 20 notes in JSON format from a given cursor position i.e -1, 1,
         etc. For example: -1 returns the most recent 20 notes, 1 returns the previous 20
         before that, etc. One exeption to note is that 0 returns a JSON object for all
         notes in a given account.
 
         Args:
-            cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20)
+            cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20).
         Returns:
-            A json object containing notes from cursor position requested
-        '''
+            A json object containing notes from cursor position requested.
+        """
         url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON + self.API_ENDPOINT_CURSOR + str(cursor_position)
         cursor      = self._fetch_url(url)
         return cursor
 
     def _fetch_url(self, url):
-        '''
+        """
         Perform a basic auth request on a given snaptic API endpoint.
 
         Args:
-            url: Snaptic Api endpoint (i.e /v1/notes.json etc)
+            url: Snaptic Api endpoint (i.e /v1/notes.json etc).
         Returns:
             The server's response page.
-        '''
+        """
         handler       = self._basic_auth_request(url)
         response      = handler.getresponse()
         data          = response.read()
@@ -617,15 +648,17 @@ class Api(object):
         return data
 
     def _make_basic_auth_headers(self, username, password):
-        '''
+        """
         Encode headers for basic auth request.
 
-        Args:
+        Args::
+
             username: snaptic username to be used.
             password: password to be used.
+
         Returns:
             Dictionary with encoded basic auth values.
-        '''
+        """
         if username and password:
             headers = dict(Authorization="Basic %s"
                     %(base64.b64encode("%s:%s" %(username, password))))
@@ -634,18 +667,20 @@ class Api(object):
         return headers
 
     def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
-        ''' 
+        """
         Make a HTTP request with basic auth header and supplied method.
         Defaults to operating over SSL. 
 
-        Args:
+        Args::
+
             path: Snaptic API endpoint
             metthod: which http method to use (PUT/DELETE/GET)
             headers: Additional header to use with request.
             params: Other parameters to use
+
         Returns:
             The server's response page.
-        '''
+        """
         h           = self._make_basic_auth_headers(self._username, self._password)
         h.update(headers)
         if self._use_ssl:
@@ -662,14 +697,14 @@ class Api(object):
         return conn
 
     def _parse_user_info(self, source):
-        '''
+        """
         Parse JSON user returned from snaptic, instantiate a User object from it.
 
         Args:
             source: Json object representing a user
         Returns:
             A User object.
-        '''
+        """
         user_info   = json.loads(source)
 
         if 'user' in user_info:
@@ -678,15 +713,17 @@ class Api(object):
             SnapticError("Error no user key found in source JSON passed to _parse_user_info")
 
     def _parse_notes( self, source, get_image_data=False):
-        '''
+        """
         parse JSON notes returned from snaptic, instantiate a list of note objects from it.
 
-        Args:
+        Args::
+
             source: A json object representing a list of notes.
             get_images: if images are associated with notes, download them now.
         Returns:
             A list of note objects.
-        '''
+        """
+
         notes       = []
         json_notes  = json.loads(source)
 
