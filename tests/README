@@ -22,7 +22,7 @@ Provided along with the tests are configs to run against:
 - https://snaptic.com (config.ini)
 
 You specify the configuration file to use via the '--tc-file' option.
-You also need to add username/password/email of account you want to test
+You also need to add username/password/email of the account you want to test
 against to config.ini.
 
 HOW TO RUN THE TESTS
@@ -32,7 +32,7 @@ To start the tests, type 'nosetests --tc-file=<CONFIG FILE>' in the same
 directory as the test source files.  More verbose output can be seen by passing
 the -v flag: 'nosetests -v --tc-file=<CONFIG FILE>'.
 
-E.g. to run the tests against https://snaptic-info.test you would execute:
+E.g. to run the tests against https://api.snaptic.com you would execute:
 
 $ nosetests -v --tc-file=config.ini
 
