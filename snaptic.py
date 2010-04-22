@@ -207,10 +207,25 @@ class Api(object):
            To post a note:
 
                >>> api.post_note("Harry says snaptic is da bomb")
-               '{\n\n\t"notes":[\n{\n\n\t"summary":"Harry says snaptic is da
-               bomb",\n\t"user":{\n\n\t"user_name":"harry12",\n\t"id":1813083}\n,\n\t"created_at":"2010-04-22T04:19:16.543Z",\n\t"mode":"private",\n\t"modified_at":"2010-04-22T04:19:16.543Z",\n\t"labels":[\n]\n,\n\t"reminder_at":null,\n\t"id":2276722,\n\t"text":"Harry
-               says snaptic is da
-               bomb",\n\t"tags":[\n]\n,\n\t"source":"3banana",\n\t"location":null,\n\t"source_url":"https://snaptic.com/",\n\t"children":0}\n]\n}\n'
+               {
+                "notes":[
+                    {
+                        "summary":"Harry says snaptic is da bomb",
+                        "user": { 
+                            "user_name":"harry12",
+                            "id":1813083},
+                            "created_at":"2010-04-22T04:19:16.543Z",
+                            "mode":"private",
+                            "modified_at":"2010-04-22T04:19:16.543Z",
+                            "reminder_at":null,
+                            "id":2276722,
+                            "text":"Harry says snaptic is da bomb",
+                            "tags":[],
+                            "source":"3banana",
+                            "location":null,
+                            "source_url":"https://snaptic.com/",
+                            "children":0
+                    }]}
 
            To delete a note:
 
