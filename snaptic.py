@@ -64,15 +64,13 @@ class User(object):
        user.id # read only
        user.user_name # read only
        user.created_at # read only
-       user.auth_token # read only
        user.email # read only
     """
 
-    def __init__(self, id=None, user_name=None, created_at=None, auth_token=None, email=None):
+    def __init__(self, id=None, user_name=None, created_at=None, email=None):
         self._id             = id
         self._user_name      = user_name
         self._created_at     = created_at
-        self._auth_token     = auth_token
         self._email          = email
 
     @property
@@ -86,10 +84,6 @@ class User(object):
     @property
     def created_at(self):
         return self._created_at
-
-    @property
-    def auth_token(self):
-        return self._auth_token
 
     @property
     def email(self):
@@ -213,27 +207,10 @@ class Api(object):
            To post a note:
 
                >>> api.post_note("Harry says snaptic is da bomb")
-               {
-               "notes":[
-                   {
-                   "created_at": "2010-04-06T22:59:12.093Z",
-                   "modified_at": "2010-04-06T22:59:12.093Z",
-                   "reminder_at": "",
-                   "id": "1926387",
-                   "text": "Harry says snaptic is da bomb",
-                   "summary": "Harry says snaptic is da bomb",
-                   "source": "3banana",
-                   "source_url": "https://snaptic.com/",
-                   "user": {
-                       "id": "1813083",
-                       "user_name": "harry12"
-                   },
-                   "children": "0",
-                   "labels": {},
-                   "tags": {},
-                   "location": {}
-                   }
-               ]}
+               '{\n\n\t"notes":[\n{\n\n\t"summary":"Harry says snaptic is da
+               bomb",\n\t"user":{\n\n\t"user_name":"harry12",\n\t"id":1813083}\n,\n\t"created_at":"2010-04-22T04:19:16.543Z",\n\t"mode":"private",\n\t"modified_at":"2010-04-22T04:19:16.543Z",\n\t"labels":[\n]\n,\n\t"reminder_at":null,\n\t"id":2276722,\n\t"text":"Harry
+               says snaptic is da
+               bomb",\n\t"tags":[\n]\n,\n\t"source":"3banana",\n\t"location":null,\n\t"source_url":"https://snaptic.com/",\n\t"children":0}\n]\n}\n'
 
            To delete a note:
 
@@ -351,7 +328,7 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + id +".json"
+        page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + str(id) +".json"
         return self._post_multi_part(self._url, page, [("image", filename, data)])
 
     def _post_multi_part(self, host, selector, files):
@@ -464,13 +441,13 @@ class Api(object):
             if isinstance(note, Note):
                 #Edit an existing note
                 params         = urlencode(note.dictionary)
-                page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note.note_id + '.json'
+                page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + str(note.note_id) + '.json'
             else:
                 params      = urlencode(dict(text=note))
                 page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
             handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
         elif http_method == self.HTTP_DELETE:
-            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + note
+            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + str(note)
             handle         = self._basic_auth_request(page, method=self.HTTP_DELETE)
  
         response    = handle.getresponse()
@@ -490,7 +467,7 @@ class Api(object):
         Returns:
             Data associated with image id.
         """
-        url = self.API_ENDPOINT_IMAGES_VIEW  + id
+        url = self.API_ENDPOINT_IMAGES_VIEW  + str(id)
         return self._fetch_url(url)
 
     def get_user_id(self):
@@ -708,7 +685,7 @@ class Api(object):
         user_info   = json.loads(source)
 
         if 'user' in user_info:
-            self._user = User(user_info['user']['id'], user_info['user']['user_name'], user_info['user']['created_at'], user_info['user']['auth_token'], user_info['user']['email'])
+            self._user = User(user_info['user']['id'], user_info['user']['user_name'], user_info['user']['created_at'], user_info['user']['email'])
         else:
             SnapticError("Error no user key found in source JSON passed to _parse_user_info")
 

@@ -17,7 +17,7 @@ Introduction
 This library provides a pure python interface for the Snaptic API.
 
 Snaptic (https://snaptic.com/) provides a service that allows people to build cross platform productivity applications to
-capture, organize, and share information. Snaptic exposes a web services API (http://wiki.github.com/snaptic/docs-api/snaptic-rest-api) 
+capture, organize, and share information. Snaptic exposes a web services API(http://wiki.github.com/snaptic/docs-api/snaptic-api-quickstart-guide)
 which this library implements for python programmers.
 
 Build instructions
@@ -108,7 +108,7 @@ Further information
 
 For more information on the Snaptic REST API see here:
 
-http://wiki.github.com/snaptic/docs-api/snaptic-rest-api
+http://wiki.github.com/snaptic/docs-api/snaptic-api-quickstart-guide
 
 Contributors
 ==================
