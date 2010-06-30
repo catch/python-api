@@ -16,8 +16,8 @@ Introduction
 
 This library provides a pure python interface for the Snaptic API.
 
-Snaptic (https://snaptic.com/) provides a service that allows people to build cross platform productivity applications to
-capture, organize, and share information. Snaptic exposes a web services API(http://wiki.github.com/snaptic/docs-api/snaptic-api-quickstart-guide)
+Snaptic (https://snaptic.com/) provides a service that allows people to build cross-platform productivity applications to
+capture, organize, and share information. Snaptic exposes a web services API (http://wiki.github.com/snaptic/docs-api/snaptic-api-quickstart-guide)
 which this library implements for python programmers.
 
 Build instructions
@@ -25,17 +25,17 @@ Build instructions
 
 **From source:**
 
-Install the dependencies:
+The Snaptic API requires simplejson. Python 2.6+ has it built in, Python 2.5 and under
+need the ``simplejson`` module.  You can install simplejson with this command::
 
-http://pypi.python.org/pypi/simplejson
+  easy_install simplejson
 
-Download the latest python-snaptic library from:
+To install, check out the latest version of the snaptic python API and
+run ``setup.py`` ::
 
-*todo: place holder, work out with NJO how we are going to do deployment of tar files. -htormey*
-
-Untar the source distribution and run:
-
-python setup.py install
+  git clone git://github.com/snaptic/python-api.git
+  cd python-api
+  python setup.py install
 
 Testing
 ==========
@@ -43,13 +43,13 @@ Testing
 **Requirements**
 
 - Python with JSON support. Python 2.6+ has it built in, Python 2.5 and under
-  need 'simplejson' module.  You can install simplejson with command:
-  'easy_install simplejson'.
+  need the ``simplejson`` module.  You can install simplejson with the command:
+  ``easy_install simplejson``.
 
-- 'nose' test runner.  http://somethingaboutorange.com/mrl/projects/nose/.
+- ``nose`` test runner.  http://somethingaboutorange.com/mrl/projects/nose/.
 
-- 'nose-testconfig' plugin.  To install nose-testconfig, run command:
-  'easy_install nose-testconfig'.
+- ``nose-testconfig`` plugin.  To install nose-testconfig, run the command:
+  ``easy_install nose-testconfig``.
 
 **Test configuration**
 
@@ -59,21 +59,21 @@ format).
 
 Provided along with the tests are configs to run against:
 
-- https://snaptic.com (config.ini)
+- https://api.snaptic.com (config.ini)
 
-You specify the configuration file to use via the '--tc-file' option.
+You specify the configuration file to use via the ``--tc-file`` option.
 You also need to add username/password/email of the account you want to test
 against to config.ini.
 
 **How to run the tests**
 
-To start the tests, type 'nosetests --tc-file=<CONFIG FILE>' in the same
+To start the tests, type ``nosetests --tc-file=<CONFIG FILE>`` in the same
 directory as the test source files.  More verbose output can be seen by passing
-the -v flag: 'nosetests -v --tc-file=<CONFIG FILE>'.
+the -v flag: ``nosetests -v --tc-file=<CONFIG FILE>``.
 
-E.g. to run the tests against https://api.snaptic.com you would execute:
+E.g. to run the tests against https://api.snaptic.com you would execute::
 
-$ nosetests -v --tc-file=config.ini
+    $ nosetests -v --tc-file=config.ini
 
 
 Source code
@@ -85,8 +85,8 @@ http://github.com/snaptic/python-api
 
 Check out the latest version of the snaptic python API::
 
-  git clone git@github.com:snaptic/python-api.git
-  cd python-snaptic
+  git clone git://github.com/snaptic/python-api.git
+  cd python-api
 
 Documentation
 ==================

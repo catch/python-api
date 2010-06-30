@@ -16,11 +16,11 @@
 '''The setup and build script for the python-snaptic library.'''
 
 __author__ = 'harry@snaptic.com'
-__version__ = '0.4-devel'
+__version__ = '0.4'
 
 
 METADATA = dict(
-  name = "python-snaptic",
+  name = "py-snaptic",
   version = __version__,
   py_modules = ['snaptic'],
   author='Harry Tormey',
