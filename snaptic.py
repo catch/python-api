@@ -282,7 +282,8 @@ class Api(object):
     API_ENDPOINT_USER_JSON      = "/user.json"
     API_ENDPOINT_CURSOR         = "?cursor="
 
-    def __init__(self, username, password=None, url=API_SERVER, use_ssl=True, port=443, timeout=10):
+    def __init__(self, username=None, password=None, url=API_SERVER,
+                 use_ssl=True, port=443, timeout=10, cookie_epass=None):
         """
         Args:
             username: The username of the snaptic account.
@@ -299,20 +300,31 @@ class Api(object):
         self._user      = None
         self._notes     = None
         self._json      = None
-        self.set_credentials(username, password)
+        if cookie_epass:
+            self.set_credentials(cookie_epass=cookie_epass)
+        else:
+            self.set_credentials(username=username, password=password)
 
-    def set_credentials(self, username, password):
+    def set_credentials(self, username=None, password=None, cookie_epass=None):
         """
-        Set username/password
+        Set username/password or cookie.
 
         Args:
             username: 
                 snaptic username.
             password: 
                 snaptic password.
+            cookie_epass:
+                snaptic authentication cookie
         """
-        self._username = username
-        self._password = password
+        if username and password:
+            self._username = username
+            self._password = password
+        elif cookie_epass:
+            self._cookie_epass = cookie_epass
+        else:
+            raise SnapticError("No username/password combination\
+                                or cookie authentication provided")
 
     def load_image_and_add_to_note_with_id(self, filename, id):
         """
@@ -361,7 +373,7 @@ class Api(object):
         """
         content_type, body = self._encode_multi_part_form_data(files)
         handler = httplib.HTTPConnection(host)
-        headers = self._make_basic_auth_headers(self._username, self._password)
+        headers = self._get_auth_headers()
         h = {
             'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
             'Content-Type': content_type
@@ -639,6 +651,19 @@ class Api(object):
             raise SnapticError("Http error", response.status, data)
         return data
 
+    def _get_auth_headers(self):
+        """
+        Switch between basic auth and cookie auth depending on which properties
+        self has.
+        """
+        if hasattr(self, "_username") and hasattr(self, "_password"):
+            return self._make_basic_auth_headers(self._username, self._password)
+        elif hasattr(self, "_cookie_epass"):
+            return self._make_cookie_auth_headers(self._cookie_epass)
+        else:
+            raise SnapticError("No username/password combination\
+                                or cookie authentication provided")
+
     def _make_basic_auth_headers(self, username, password):
         """
         Encode headers for basic auth request.
@@ -658,6 +683,25 @@ class Api(object):
             raise SnapticError("Error making basic auth headers with username: %s, password: %s" % (username, password))
         return headers
 
+    def _make_cookie_auth_headers(self, cookie_epass):
+        """
+        Encode headers for cookie auth request.
+
+        Args::
+
+            cookie_epass: cookie auth token to be used.
+
+        Returns:
+            Dictionary with encoded basic auth values.
+        """
+        if cookie_epass:
+            return {
+                "Cookie": "cookie_epass={0}".format(cookie_epass)
+            }
+        else:
+            raise SnapticError("Error making cookie auth headers with\
+                               cookie:{0}".format(cookie_epass))
+
     def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
         """
         Make a HTTP request with basic auth header and supplied method.
@@ -673,7 +717,7 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        h           = self._make_basic_auth_headers(self._username, self._password)
+        h = self._get_auth_headers()
         h.update(headers)
         if self._use_ssl:
             handler = httplib.HTTPSConnection

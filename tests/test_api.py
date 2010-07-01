@@ -14,7 +14,9 @@ def test_notes_property():
     """
     Verify that .notes returns a list of notes greater than 0 from test account with notes in it.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     n   = api.notes
     assert len(n) > 0
     return n
@@ -23,7 +25,9 @@ def test_get_notes():
     """
     Verify that get_notes returns a list of notes greater than 0 from test account with notes in it.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     n   = api.get_notes()
     assert len(n) > 0
     return n
@@ -32,9 +36,23 @@ def test_post_note():
     """
     Verify posting a note.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     data_before_post = test_get_notes()
     r   = api.post_note("Testing 123")
+    data_after_post = test_get_notes()
+    assert_equals(len(data_before_post) +1, len(data_after_post), "Note count from API indicates note not posted to backend")
+    return r
+
+def test_post_note_cookie():
+    """
+    Verify posting a note using cookie authentication.
+    """
+    cfg = config["api"]
+    api = snaptic.Api(url=cfg["host"], cookie_epass=cfg["cookie_epass"])
+    data_before_post = test_get_notes()
+    r   = api.post_note("Testing 123 cookie")
     data_after_post = test_get_notes()
     assert_equals(len(data_before_post) +1, len(data_after_post), "Note count from API indicates note not posted to backend")
     return r
@@ -43,7 +61,9 @@ def test_edit_note():
     """
     Verify editing a note.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     data_before_post = test_get_notes()
     r   = api.post_note("Testing 123")
     data_after_post = test_get_notes()
@@ -59,7 +79,9 @@ def test_delete_note():
     """
     Verify deleting a note.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     r   = api.post_note("Testing 123")
     data_after_post     = test_get_notes()
     api.delete_note(data_after_post[0].note_id)
@@ -70,7 +92,9 @@ def test_get_json_cursor_schema_valid():
     """ 
     Verify that Json returned by the get cursor service contains expected fields.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     r                   = api.json_cursor(-1) #Get the first 20 note
     data                = json.loads(r)
     envelope_fields = ('count', 'previous_cursor', 'next_cursor', 'notes')
@@ -87,7 +111,9 @@ def test_get_json_notes_schema_valid():
     """ 
     Verify that Json returned by the get notes service contains expected fields.
     """
-    api = snaptic.Api(username=config['api']['email'], password=config['api']['password'])
+    cfg = config["api"]
+    api = snaptic.Api(username=cfg['email'], password=cfg['password'],
+                      url=cfg["host"])
     r                   = api.get_json()
     data                = json.loads(r)
     assert_true(len(data['notes']) > 0)
