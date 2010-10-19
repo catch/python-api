@@ -132,14 +132,14 @@ class Note(object):
         note.user
         note.children
         note.media
-        note.labels
+        note.tags
         note.location
         note.has_media # read only
         note.dictionary # read only
     """
 
     def __init__(self, created_at, modified_at, reminder_at, note_id, text,
-                 summary, source, source_url, user, children, media = [], labels = [], location = []):
+                 summary, source, source_url, user, children, media = [], tags = [], location = []):
         self.created_at   = created_at
         self.modified_at  = modified_at
         self.reminder_at  = reminder_at
@@ -151,7 +151,7 @@ class Note(object):
         self.user         = user
         self.children     = children
         self.media        = media
-        self.labels       = labels
+        self.tags         = tags
         self.location     = location
 
     @property
@@ -766,7 +766,7 @@ class Api(object):
         for note in json_notes['notes']:
             media           = []
             location        = []
-            labels          = []
+            tags            = []
             user            = None
             source          = None
 
@@ -778,10 +778,9 @@ class Api(object):
                     user = self._user.id
                 if 'location' in note:
                     pass 
-                if 'labels' in note:
-                    labels = []
-                    for label in note['labels']:
-                        labels.append(label)
+                if 'tags' in note:
+                    for tag in note['tags']:
+                        tags.append(tag)
                 if 'media' in note:
                     for item in note['media']:
                         if item['type'] == 'image':
@@ -791,5 +790,5 @@ class Api(object):
                             media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
 
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
-                                note['source_url'], user, note['children'], media, labels, location))
+                                note['source_url'], user, note['children'], media, tags, location))
         return notes
