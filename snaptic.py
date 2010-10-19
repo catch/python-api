@@ -787,7 +787,7 @@ class Api(object):
                             image_data = None
                             if get_image_data:
                                 image_data = self._fetch_url(item['src'])
-                            media.append(Image(item['type'], item['md5'], item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
+                            media.append(Image(item['type'], None, item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
 
                 notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
                                 note['source_url'], user, note['children'], media, tags, location))
