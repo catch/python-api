@@ -26,34 +26,31 @@ import sys
 from urllib import urlencode
 import urlparse
 
-def Property(func):
-    return property(**func())
-
 class CatchError(Exception):
-  """
-  Base class for Catch errors.
+    """
+    Base class for Catch errors.
 
-  The SnaptiError class exposes the following properties::
+    The SnaptiError class exposes the following properties::
 
-    catch_error.message # read only
-    catch_error.status # read only
-    catch_error.response # read only
-  """
+        catch_error.message # read only
+        catch_error.status # read only
+        catch_error.response # read only
+    """
 
-  @property
-  def message(self):
-    """Returns the first argument used to construct this error."""
-    return self.args[0]
+    @property
+    def message(self):
+        """Returns the first argument used to construct this error."""
+        return self.args[0]
 
-  @property
-  def status(self):
-    """Returns the HTTP status code used to construct this error."""
-    return self.args[1]
+    @property
+    def status(self):
+        """Returns the HTTP status code used to construct this error."""
+        return self.args[1]
 
-  @property
-  def response(self):
-    """Returns HTTP response body used to construct this error."""
-    return self.args[2]
+    @property
+    def response(self):
+        """Returns HTTP response body used to construct this error."""
+        return self.args[2]
 
 class User(object):
     """
@@ -168,7 +165,7 @@ class Note(object):
         """
         Returns text from the note packaged as a dictionary.
 
-        Returns: 
+        Returns:
             A dictionary containing selected attributes from the note.
         """
         #Working on adding dates/location/media and other fields to this dictionary. Right now you can just update text. -htormey
@@ -186,22 +183,17 @@ class Api(object):
            To fetch all users notes and print an attribute:
 
                >>> [n.created_at for n in api.notes]
-               ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', '2010-03-06T01:35:14.851Z', '2010-03-05T04:13:00.616Z', '2010-03-01T00:09:38.566Z', '2010-02-18T04:09:55.471Z', '2010-02-18T02:26:35.990Z', 
-               '2010-02-12T23:28:22.612Z', '2010-02-10T03:06:50.590Z', '2010-02-10T06:02:57.068Z', '2010-02-08T05:14:07.000Z', '2010-02-08T02:28:20.391Z', '2010-02-05T06:57:54.323Z', '2010-02-07T07:26:34.469Z', 
-               '2010-01-25T02:11:24.075Z', '2010-01-24T23:37:07.411Z']
+               ['2010-03-08T17:49:08.850Z', '2010-03-06T20:02:32.501Z', ...]
 
            To fetch a subset of a users notes use a cursor. To get the first 20 notes and print an attribute:
 
                >>> [n.text for n in api.get_notes_from_cursor(-1)]
-               ['Harry says catch is da bomb #food #ice', 'Harry says catch is da bomb #food #ice', 'Harry says catch is da bomb', 'Harry says catch is da bomb', 'post number 99', 'post number 98', 
-               'post number 97', 'post number 96', 'post number 95', 'post number 94', 'post number 93', 'post number 92', 'post number 91', 'post number 90', 'post number 89', 'post number 88', 'post number 87', 
-               'post number 86', 'post number 85', 'post number 84']
+               ['Harry says catch is da bomb #food #ice', 'Harry says catch is da bomb #food #ice', ...]
 
            To get the next 20 notes use cursor 1 (cursor 0 returns all notes in a users account):
 
                >>> [n.text for n in api.get_notes_from_cursor(1)]
-               ['post number 83', 'post number 82', 'post number 81', 'post number 80', 'post number 79', 'post number 78', 'post number 77', 'post number 76', 'post number 75', 'post number 74', 'post number 73', 
-               'post number 72', 'post number 71', post number 70', 'post number 69', 'post number 68', 'post number 67', 'post number 66', 'post number 65', 'post number 64']
+               ['post number 83', 'post number 82', 'post number 81', 'post number 80', ...]
 
            To post a note:
 
@@ -210,7 +202,7 @@ class Api(object):
                 "notes":[
                     {
                         "summary":"Harry says catch is da bomb",
-                        "user": { 
+                        "user": {
                             "user_name":"harry12",
                             "id":1813083},
                             "created_at":"2010-04-22T04:19:16.543Z",
@@ -268,20 +260,7 @@ class Api(object):
              ]}
     """
 
-    API_SERVER                  = "api.catch.com"
-    API_VERSION                 = "v1"
-    HTTP_GET                    = "GET"
-    HTTP_POST                   = "POST"
-    HTTP_DELETE                 = "DELETE"
-    API_ENDPOINT_NOTES_JSON     = "/notes.json"
-    API_ENDPOINT_TAGS_JSON      = "/tags/tags.json"
-    API_ENDPOINT_NOTES          = "/notes/"
-    API_ENDPOINT_IMAGES         = "/images/"
-    API_ENDPOINT_IMAGES_VIEW    = "/viewImage.action?viewNodeId="
-    API_ENDPOINT_USER_JSON      = "/user.json"
-    API_ENDPOINT_CURSOR         = "?cursor="
-
-    def __init__(self, username=None, password=None, url=API_SERVER,
+    def __init__(self, username=None, password=None, url="api.catch.com",
                  use_ssl=True, port=443, timeout=10, cookie_epass=None):
         """
         Args:
@@ -309,9 +288,9 @@ class Api(object):
         Set username/password or cookie.
 
         Args:
-            username: 
+            username:
                 catch username.
-            password: 
+            password:
                 catch password.
             cookie_epass:
                 catch authentication cookie
@@ -334,7 +313,7 @@ class Api(object):
             filename: filename of image to load data from.
             id: id of note to which image will be appended.
         """
-        try: 
+        try:
             fin     = open(filename, 'r')
             data    = fin.read()
             self.add_image_to_note_with_id(filename, data, id)
@@ -354,8 +333,13 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        page                = "/" + self.API_VERSION + self.API_ENDPOINT_IMAGES + str(id) +".json"
+        page = "/v1/images/%s.json" % str(id)
         return self._post_multi_part(self._url, page, [("image", filename, data)])
+
+
+    @property
+    def _user_agent(self):
+        return ' '.join(("python", "catch.api-%s" % __version__))
 
     def _post_multi_part(self, host, selector, files):
         """
@@ -373,12 +357,9 @@ class Api(object):
         content_type, body = self._encode_multi_part_form_data(files)
         handler = httplib.HTTPConnection(host)
         headers = self._get_auth_headers()
-        h = {
-            'User-Agent': 'INSERT USERAGENTNAME',#Change this to library version? -htormey
-            'Content-Type': content_type
-            }
+        h = {'User-Agent': self._user_agent, 'Content-Type': content_type}
         headers.update(h)
-        handler.request(self.HTTP_POST, selector, body, headers)
+        handler.request("POST", selector, body, headers)
         response = handler.getresponse()
         data     = response.read()
         handler.close()
@@ -429,7 +410,7 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        return self._request(self.HTTP_DELETE, id)
+        return self._request("DELETE", id)
 
     def edit_note(self, note):
         """
@@ -440,7 +421,7 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        return self._request(self.HTTP_POST, note)
+        return self._request("POST", note)
 
     def post_note(self, note):
         """
@@ -451,7 +432,7 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        return self._request(self.HTTP_POST, note) #change this to note_text to be a little clearer -htormey
+        return self._request("POST", note) #change this to note_text to be a little clearer -htormey
 
     def _request(self, http_method, note): #Clean this up a little -htormey
         """
@@ -462,20 +443,20 @@ class Api(object):
         Returns:
             The server's response page.
         """
-        if http_method == self.HTTP_POST:
+        if http_method == "POST":
             headers     = { 'Content-type' : "application/x-www-form-urlencoded" }
             if isinstance(note, Note):
                 #Edit an existing note
                 params         = urlencode(note.dictionary)
-                page           = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + str(note.note_id) + '.json'
+                page = "/v1/notes/%s.json" % str(note.note_id)
             else:
-                params      = urlencode(dict(text=note))
-                page        = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
-            handle      = self._basic_auth_request(page, headers=headers, method=self.HTTP_POST, params=params)
-        elif http_method == self.HTTP_DELETE:
-            page            = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES + str(note)
-            handle         = self._basic_auth_request(page, method=self.HTTP_DELETE)
- 
+                params = urlencode(dict(text=note))
+                page = "/v1/notes.json"
+            handle      = self._basic_auth_request(page, headers=headers, method="POST", params=params)
+        elif http_method == "DELETE":
+            page = "/v1/notes/%s.json" % str(note)
+            handle = self._basic_auth_request(page, method="DELETE")
+
         response    = handle.getresponse()
         data        = response.read()
         handle.close()
@@ -493,14 +474,14 @@ class Api(object):
         Returns:
             Data associated with image id.
         """
-        url = self.API_ENDPOINT_IMAGES_VIEW  + str(id)
+        url = "/viewImage.action?viewNodeId=%s" % str(id)
         return self._fetch_url(url)
 
     def get_user_id(self):
         """
         Get ID of API user.
 
-        Returns: 
+        Returns:
             Id of catch user associated with API instance.
         """
         if self._user:
@@ -508,8 +489,8 @@ class Api(object):
         else:
             raise CatchError("Error user id not set, try calling GetNotes.")
 
-    @Property
-    def notes():
+    @property
+    def notes(self):
         doc = "A parsed list of note objects"
         def fget(self):
             if self._notes:
@@ -525,7 +506,7 @@ class Api(object):
         Returns:
             A list of Note objects from the catch users account.
         """
-        url          = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
+        url = "/v1/notes.json"
         json_notes   = self._fetch_url(url)
         self._notes  = self._parse_notes(json_notes)
         return self._notes
@@ -533,7 +514,7 @@ class Api(object):
     def get_notes_from_cursor(self, cursor_position):
         """
         Get a batch of upto 20 notes from a given cursor position. See
-        description given for json_cursor for further details on how 
+        description given for json_cursor for further details on how
         cursors work with catch.
 
         Args:
@@ -547,7 +528,7 @@ class Api(object):
 
     def get_cursor_information(self, cursor_position):
         """
-        Gets information about cursor at a given position. See json_cursor for further 
+        Gets information about cursor at a given position. See json_cursor for further
         details on how cursors work with catch.
 
         Args:
@@ -580,12 +561,12 @@ class Api(object):
         Returns:
             A user object.
         """
-        url          = "/" + self.API_VERSION + self.API_ENDPOINT_USER_JSON
-        user_info    = self._fetch_url(url)
+        url = "/v1/user.json"
+        user_info = self._fetch_url(url)
         self._parse_user_info(user_info)
         return self._user
 
-    @Property
+    @property
     def json():
         doc = "Json object of notes stored in account."
         def fget(self):
@@ -602,7 +583,7 @@ class Api(object):
         Returns:
             A json object representing all notes in a users account.
         """
-        url         = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
+        url = "/v1/notes.json"
         self._json  = self._fetch_url(url)
         return self._json
 
@@ -613,8 +594,8 @@ class Api(object):
         Returns:
             A json object containing tags and related information (number of notes per tag, etc).
         """
-        url         = "/" + self.API_VERSION + self.API_ENDPOINT_TAGS_JSON
-        tags        = self._fetch_url(url)
+        url = "/v2/tags.json"
+        tags = self._fetch_url(url)
         return tags
 
     def json_cursor(self, cursor_position):
@@ -629,7 +610,7 @@ class Api(object):
         Returns:
             A json object containing notes from cursor position requested.
         """
-        url         =  "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON + self.API_ENDPOINT_CURSOR + str(cursor_position)
+        url =  "/v1/notes.json?cursor=%s" % str(cursor_position)
         cursor      = self._fetch_url(url)
         return cursor
 
@@ -701,10 +682,10 @@ class Api(object):
             raise CatchError("Error making cookie auth headers with\
                                cookie:{0}".format(cookie_epass))
 
-    def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
+    def _basic_auth_request(self, path, method="GET", headers={}, params={}):
         """
         Make a HTTP request with basic auth header and supplied method.
-        Defaults to operating over SSL. 
+        Defaults to operating over SSL.
 
         Args::
 
@@ -776,7 +757,7 @@ class Api(object):
                         user = self._user.id
                     user = self._user.id
                 if 'location' in note:
-                    pass 
+                    pass
                 if 'tags' in note:
                     for tag in note['tags']:
                         tags.append(tag)
@@ -788,6 +769,6 @@ class Api(object):
                                 image_data = self._fetch_url(item['src'])
                             media.append(Image(item['type'], None, item['id'], item['revision_id'], item['width'], item['height'], item['src'], image_data))
 
-                notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'], 
+                notes.append(Note(note['created_at'], note['modified_at'], note['reminder_at'], note['id'], note['text'], note['summary'], note['source'],
                                 note['source_url'], user, note['children'], media, tags, location))
         return notes
