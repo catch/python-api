@@ -1,22 +1,21 @@
-# Copyright (c) 2010 Harry Tormey <harry@snaptic.com>
+# Copyright 2011 Catch.com, Inc.
 #
-# Permission to use, copy, modify, and distribute this software for any
-# purpose with or without fee is hereby granted, provided that the above
-# copyright notice and this permission notice appear in all copies.
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 
+'''A python interface to the Catch API'''
 
-'''A python interface to the Snaptic API'''
-
-__author__ = 'harry@snaptic.com'
-__version__ = '0.4-devel'
+__author__ = 'ariel@catch.com'
+__version__ = '0.5'
 
 import mimetypes
 import base64
@@ -30,15 +29,15 @@ import urlparse
 def Property(func):
     return property(**func())
 
-class SnapticError(Exception):
+class CatchError(Exception):
   """
-  Base class for Snaptic errors.
+  Base class for Catch errors.
 
   The SnaptiError class exposes the following properties::
 
-    snaptic_error.message # read only
-    snaptic_error.status # read only
-    snaptic_error.response # read only
+    catch_error.message # read only
+    catch_error.status # read only
+    catch_error.response # read only
   """
 
   @property
@@ -58,7 +57,7 @@ class SnapticError(Exception):
 
 class User(object):
     """
-    A class representing the User structure used by the Snaptic API.
+    A class representing the User structure used by the Catch API.
 
      The User class exposes the following properties::
        user.id # read only
@@ -92,7 +91,7 @@ class User(object):
 #Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
 class Image(object):
     """
-    A class representing the Image structure which is an attribute of a note retruned via the Snaptic API.
+    A class representing the Image structure which is an attribute of a note retruned via the Catch API.
 
      The Image structure exposes the following properties::
 
@@ -117,7 +116,7 @@ class Image(object):
 
 class Note(object):
     """
-    A class representing the Note structure used by the Snaptic API.
+    A class representing the Note structure used by the Catch API.
 
     The Note structure exposes the following properties::
 
@@ -179,10 +178,10 @@ class Api(object):
     """
        Example usage:
 
-           To create an instance of the snaptic.Api class with basic authentication:
+           To create an instance of the catch.Api class with basic authentication:
 
-               >>> import snaptic
-               >>> api = snaptic.Api("username", "password")
+               >>> import catchapi
+               >>> api = catch.Api("username", "password")
 
            To fetch all users notes and print an attribute:
 
@@ -194,7 +193,7 @@ class Api(object):
            To fetch a subset of a users notes use a cursor. To get the first 20 notes and print an attribute:
 
                >>> [n.text for n in api.get_notes_from_cursor(-1)]
-               ['Harry says snaptic is da bomb #food #ice', 'Harry says snaptic is da bomb #food #ice', 'Harry says snaptic is da bomb', 'Harry says snaptic is da bomb', 'post number 99', 'post number 98', 
+               ['Harry says catch is da bomb #food #ice', 'Harry says catch is da bomb #food #ice', 'Harry says catch is da bomb', 'Harry says catch is da bomb', 'post number 99', 'post number 98', 
                'post number 97', 'post number 96', 'post number 95', 'post number 94', 'post number 93', 'post number 92', 'post number 91', 'post number 90', 'post number 89', 'post number 88', 'post number 87', 
                'post number 86', 'post number 85', 'post number 84']
 
@@ -206,11 +205,11 @@ class Api(object):
 
            To post a note:
 
-               >>> api.post_note("Harry says snaptic is da bomb")
+               >>> api.post_note("Harry says catch is da bomb")
                {
                 "notes":[
                     {
-                        "summary":"Harry says snaptic is da bomb",
+                        "summary":"Harry says catch is da bomb",
                         "user": { 
                             "user_name":"harry12",
                             "id":1813083},
@@ -219,11 +218,11 @@ class Api(object):
                             "modified_at":"2010-04-22T04:19:16.543Z",
                             "reminder_at":null,
                             "id":2276722,
-                            "text":"Harry says snaptic is da bomb",
+                            "text":"Harry says catch is da bomb",
                             "tags":[],
                             "source":"3banana",
                             "location":null,
-                            "source_url":"https://snaptic.com/",
+                            "source_url":"https://catch.com/",
                             "children":0
                     }]}
 
@@ -269,7 +268,7 @@ class Api(object):
              ]}
     """
 
-    API_SERVER                  = "api.snaptic.com"
+    API_SERVER                  = "api.catch.com"
     API_VERSION                 = "v1"
     HTTP_GET                    = "GET"
     HTTP_POST                   = "POST"
@@ -286,8 +285,8 @@ class Api(object):
                  use_ssl=True, port=443, timeout=10, cookie_epass=None):
         """
         Args:
-            username: The username of the snaptic account.
-            password: The password of the snaptic account.
+            username: The username of the catch account.
+            password: The password of the catch account.
             url: The url of the api server which will handle the http(s) API requests.
             use_ssl: Use ssl for basic auth or not.
             port: The port to make http(s) requests on.
@@ -311,11 +310,11 @@ class Api(object):
 
         Args:
             username: 
-                snaptic username.
+                catch username.
             password: 
-                snaptic password.
+                catch password.
             cookie_epass:
-                snaptic authentication cookie
+                catch authentication cookie
         """
         if username and password:
             self._username = username
@@ -323,7 +322,7 @@ class Api(object):
         elif cookie_epass:
             self._cookie_epass = cookie_epass
         else:
-            raise SnapticError("No username/password combination\
+            raise CatchError("No username/password combination\
                                 or cookie authentication provided")
 
     def load_image_and_add_to_note_with_id(self, filename, id):
@@ -340,7 +339,7 @@ class Api(object):
             data    = fin.read()
             self.add_image_to_note_with_id(filename, data, id)
         except IOError:
-            raise SnapticError("Error reading filename")
+            raise CatchError("Error reading filename")
 
     def add_image_to_note_with_id(self, filename, data, id):
         """
@@ -384,7 +383,7 @@ class Api(object):
         data     = response.read()
         handler.close()
         if response.status != 200:
-            raise SnapticError("Error posting files ", response.status, data)
+            raise CatchError("Error posting files ", response.status, data)
 
     def _encode_multi_part_form_data(self, files):
         """
@@ -482,7 +481,7 @@ class Api(object):
         handle.close()
 
         if response.status != 200:
-            raise SnapticError("Http error posting/editing/deleting note ", response.status, data)
+            raise CatchError("Http error posting/editing/deleting note ", response.status, data)
         return data
 
     def get_image_with_id(self, id):
@@ -502,12 +501,12 @@ class Api(object):
         Get ID of API user.
 
         Returns: 
-            Id of snaptic user associated with API instance.
+            Id of catch user associated with API instance.
         """
         if self._user:
             return self._user.id
         else:
-            raise SnapticError("Error user id not set, try calling GetNotes.")
+            raise CatchError("Error user id not set, try calling GetNotes.")
 
     @Property
     def notes():
@@ -524,7 +523,7 @@ class Api(object):
         Get notes and update the Api's internal cache.
 
         Returns:
-            A list of Note objects from the snaptic users account.
+            A list of Note objects from the catch users account.
         """
         url          = "/" + self.API_VERSION + self.API_ENDPOINT_NOTES_JSON
         json_notes   = self._fetch_url(url)
@@ -535,7 +534,7 @@ class Api(object):
         """
         Get a batch of upto 20 notes from a given cursor position. See
         description given for json_cursor for further details on how 
-        cursors work with snaptic.
+        cursors work with catch.
 
         Args:
             cursor_position: cursor position to grab 20 notes from (i.e -1 is most recent 20)
@@ -549,7 +548,7 @@ class Api(object):
     def get_cursor_information(self, cursor_position):
         """
         Gets information about cursor at a given position. See json_cursor for further 
-        details on how cursors work with snaptic.
+        details on how cursors work with catch.
 
         Args:
             cursor_position: cursor position you want to find out about.
@@ -561,7 +560,7 @@ class Api(object):
 
     def _parse_cursor_info(self, source):
         """
-        Parse cursor information with notes returned from snaptic.
+        Parse cursor information with notes returned from catch.
 
         Args:
             source: A json object consisting of notes and cursor information
@@ -572,7 +571,7 @@ class Api(object):
         if 'next_cursor' in cursor_info and 'previous_cursor' in cursor_info and 'count' in cursor_info:
             return {"previous_cursor": cursor_info['previous_cursor'], "next_cursor": cursor_info['next_cursor'], "count": cursor_info['count'] }
         else:
-            SnapticError("Error keys missing from source JSON passed to _parse_cursor_info")
+            CatchError("Error keys missing from source JSON passed to _parse_cursor_info")
 
     def get_user(self):
         """
@@ -636,10 +635,10 @@ class Api(object):
 
     def _fetch_url(self, url):
         """
-        Perform a basic auth request on a given snaptic API endpoint.
+        Perform a basic auth request on a given catch API endpoint.
 
         Args:
-            url: Snaptic Api endpoint (i.e /v1/notes.json etc).
+            url: Catch Api endpoint (i.e /v1/notes.json etc).
         Returns:
             The server's response page.
         """
@@ -648,7 +647,7 @@ class Api(object):
         data          = response.read()
         handler.close()
         if response.status != 200:
-            raise SnapticError("Http error", response.status, data)
+            raise CatchError("Http error", response.status, data)
         return data
 
     def _get_auth_headers(self):
@@ -661,7 +660,7 @@ class Api(object):
         elif hasattr(self, "_cookie_epass"):
             return self._make_cookie_auth_headers(self._cookie_epass)
         else:
-            raise SnapticError("No username/password combination\
+            raise CatchError("No username/password combination\
                                 or cookie authentication provided")
 
     def _make_basic_auth_headers(self, username, password):
@@ -670,7 +669,7 @@ class Api(object):
 
         Args::
 
-            username: snaptic username to be used.
+            username: catch username to be used.
             password: password to be used.
 
         Returns:
@@ -680,7 +679,7 @@ class Api(object):
             headers = dict(Authorization="Basic %s"
                     %(base64.b64encode("%s:%s" %(username, password))))
         else:
-            raise SnapticError("Error making basic auth headers with username: %s, password: %s" % (username, password))
+            raise CatchError("Error making basic auth headers with username: %s, password: %s" % (username, password))
         return headers
 
     def _make_cookie_auth_headers(self, cookie_epass):
@@ -699,7 +698,7 @@ class Api(object):
                 "Cookie": "cookie_epass={0}".format(cookie_epass)
             }
         else:
-            raise SnapticError("Error making cookie auth headers with\
+            raise CatchError("Error making cookie auth headers with\
                                cookie:{0}".format(cookie_epass))
 
     def _basic_auth_request(self, path, method=HTTP_GET, headers={}, params={}):
@@ -709,7 +708,7 @@ class Api(object):
 
         Args::
 
-            path: Snaptic API endpoint
+            path: Catch API endpoint
             metthod: which http method to use (PUT/DELETE/GET)
             headers: Additional header to use with request.
             params: Other parameters to use
@@ -734,7 +733,7 @@ class Api(object):
 
     def _parse_user_info(self, source):
         """
-        Parse JSON user returned from snaptic, instantiate a User object from it.
+        Parse JSON user returned from catch, instantiate a User object from it.
 
         Args:
             source: Json object representing a user
@@ -746,11 +745,11 @@ class Api(object):
         if 'user' in user_info:
             self._user = User(user_info['user']['id'], user_info['user']['user_name'], user_info['user']['created_at'], user_info['user']['email'])
         else:
-            SnapticError("Error no user key found in source JSON passed to _parse_user_info")
+            raise CatchError("Error no user key found in source JSON passed to _parse_user_info")
 
     def _parse_notes( self, source, get_image_data=False):
         """
-        parse JSON notes returned from snaptic, instantiate a list of note objects from it.
+        parse JSON notes returned from catch, instantiate a list of note objects from it.
 
         Args::
 

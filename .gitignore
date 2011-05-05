@@ -1,0 +1,4 @@
+*.egg-info
+_install
+*.pyc
+
