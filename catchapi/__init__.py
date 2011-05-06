@@ -20,32 +20,6 @@ __version__ = '0.5'
 import mimetypes, base64, httplib, urllib, os, sys, urlparse, datetime
 import simplejson as json
 
-class CatchError(Exception):
-    """
-    Base class for Catch errors.
-
-    The SnaptiError class exposes the following properties::
-
-        catch_error.message # read only
-        catch_error.status # read only
-        catch_error.response # read only
-    """
-
-    @property
-    def message(self):
-        """Returns the first argument used to construct this error."""
-        return self.args[0]
-
-    @property
-    def status(self):
-        """Returns the HTTP status code used to construct this error."""
-        return self.args[1]
-
-    @property
-    def response(self):
-        """Returns HTTP response body used to construct this error."""
-        return self.args[2]
-
 class User(dict):
     """
     A class representing the User structure used by the Catch API.
@@ -113,41 +87,36 @@ class User(dict):
                                             'access_token': self.access_token})
         return [Note(self, self._session, n) for n in data['notes']], data['count']
 
-#Perhaps I should refactor this into a class hierarchy and subclass for image/sound/etc? -htormey
-class Image(object):
-    """
-    A class representing the Image structure which is an attribute of a note retruned via the Catch API.
+class Media(dict):
 
-     The Image structure exposes the following properties::
+    def __init__(self, user, session, note, *args, **kwds):
+        self._user = user
+        self._session = session
+        self._note = note
+        super(Media, self).__init__(*args, **kwds)
 
-        image.type
-        image.md5
-        image.id
-        image.width
-        image.height
-        image.src
-        image.data
-    """
+    @property
+    def deleted(self):
+        return self._deleted
 
-    def __init__(self, type="image", md5=None, id=None, revision_id=None, width=0, height=0, src=None, data=None):
-        self.type           = type
-        self.md5            = md5
-        self.id             = id
-        self.revision_id    = revision_id
-        self.width          = width
-        self.height         = height
-        self.src            = src
-        self.data           = data
+    def delete(self):
+        data = self._session._request("DELETE", "/v2/media/%s/%s.json" % (self._note['id'], self['id']),
+                                      body={"access_token": self._user.access_token})
+        # not quite ready for this...
+        # "server_modified_at": self['server_modified_at']})
+        if data['status'] == 'ok':
+            self._note['media'] = (m for m in self._note['media'] if m is not self)
+            self._deleted = True
+            return True
 
 class Note(dict):
-    """
-    """
 
     def __init__(self, user, session, *args, **kwds):
         self._user = user
         self._session = session
         self._dirty = False
         super(Note, self).__init__(*args, **kwds)
+        self['media'] = (Media(self._user, self._session, self) for m in self['media'])
 
     @property
     def deleted(self):
@@ -168,15 +137,40 @@ class Note(dict):
             body=kwds)
         self.update(data['notes'][0])
 
-    @property
-    def has_media(self):
-        """
-        Check to see if Note has any media (images) associated with it.
+    def add_media(self, filename, **opts):
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
 
-        Returns:
-            True/False
-        """
-        return len(self.media) > 0
+        def multipart(parts):
+            L = []
+            for (key, fn, value) in parts:
+                L.append('--' + BOUNDARY)
+                if fn:
+                    L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, fn))
+                else:
+                    L.append('Content-Disposition: form-data; name="%s"' % key)
+                content_type = mimetypes.guess_type(fn)[0] or 'application/octet-stream'
+                L.append('Content-Type: %s' % content_type)
+                L.append('')
+                L.append(value)
+            L.append('--' + BOUNDARY + '--')
+            L.append('')
+            return '\r\n'.join(L)
+
+        with open(filename) as body:
+            parts = [('data', filename, body.read())]
+            parts.extend([(k, None, v) for k, v in opts.iteritems()])
+            body = multipart(parts)
+
+        data = self._session._request(
+            "POST",
+            "/v2/media/{id}.json?access_token={token}".format(id=self['id'],
+                                                              token=self._user.access_token),
+            body=body,
+            headers={'Content-Type': 'multipart/form-data; boundary=%s' % BOUNDARY})
+
+        m = Media(self._user, self._session, self, data)
+        self['media'] = tuple(list(self['media']) + [m])
+        return m
 
 class CatchSession(object):
     """
@@ -223,122 +217,6 @@ class CatchSession(object):
         })
         return User(self, data['user'])
 
-    def load_image_and_add_to_note_with_id(self, filename, id):
-        """
-        Load image from filename and append to note.
-
-        Args::
-
-            filename: filename of image to load data from.
-            id: id of note to which image will be appended.
-        """
-        try:
-            fin     = open(filename, 'r')
-            data    = fin.read()
-            self.add_image_to_note_with_id(filename, data, id)
-        except IOError:
-            raise CatchError("Error reading filename")
-
-    def add_image_to_note_with_id(self, filename, data, id):
-        """
-        Add image data to note.
-
-        Args::
-
-            filename: filename of image.
-            data: loaded image data to be appended to note.
-            id: id of note to which image data will be appended.
-
-        Returns:
-            The server's response page.
-        """
-        page = "/v1/images/%s.json" % str(id)
-        return self._post_multi_part(self._url, page, [("image", filename, data)])
-
     @property
     def _user_agent(self):
         return ' '.join(("python", "catch.api-%s" % __version__))
-
-    def _post_multi_part(self, host, selector, files):
-        """
-        Post files to an http host as multipart/form-data.
-
-        Args::
-
-            host: server to send request to
-            selector: API endpoint to send to the server
-            files: sequence of (name, filename, value) elements for data to be uploaded as files
-
-        Returns:
-            Return the server's response page.
-        """
-        content_type, body = self._encode_multi_part_form_data(files)
-        handler = httplib.HTTPConnection(host)
-        headers = self._get_auth_headers()
-        h = {'User-Agent': self._user_agent, 'Content-Type': content_type}
-        headers.update(h)
-        handler.request("POST", selector, body, headers)
-        response = handler.getresponse()
-        data     = response.read()
-        handler.close()
-        if response.status != 200:
-            raise CatchError("Error posting files ", response.status, data)
-
-    def _encode_multi_part_form_data(self, files):
-        """
-        Encode multi part form data to be posted to server.
-
-        Args:
-            Files is a sequence of (name, filename, value) elements for data to be uploaded as files
-        Return:
-            sequence of (content_type, body) ready for httplib.HTTPConnection instance
-        """
-        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF = '\r\n'
-        L = []
-        for (key, filename, value) in files:
-            L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-            L.append('Content-Type: %s' % self._get_content_type(filename))
-            L.append('')
-            L.append(value)
-        L.append('--' + BOUNDARY + '--')
-        L.append('')
-        body = CRLF.join(L)
-        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-        return content_type, body
-
-    def _get_content_type(self, filename):
-        """
-        Attempt to guess mimetype of file.
-
-        Args:
-            filename: filename to be guessed.
-        Returns:
-            File type or default value.
-        """
-        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
-    def get_image_with_id(self, id):
-        """
-        Get image data associated with a given id.
-
-        Args:
-            id: id of image to be fetched.
-        Returns:
-            Data associated with image id.
-        """
-        url = "/viewImage.action?viewNodeId=%s" % str(id)
-        return self._fetch_url(url)
-
-    def get_user_id(self):
-        """
-        Get ID of API user.
-
-        Returns:
-            Id of catch user associated with API instance.
-        """
-        if self._user:
-            return self._user.id
-        else:
-            raise CatchError("Error user id not set, try calling GetNotes.")

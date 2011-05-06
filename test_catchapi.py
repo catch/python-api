@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 import simplejson as json
-import sys, unittest, catchapi
+import sys, unittest, catchapi, os
 from getpass import getpass
 
 class TestCatchAPI(unittest.TestCase):
@@ -65,7 +65,7 @@ class TestCatchAPI(unittest.TestCase):
         self.assertEquals(note['text'], "Testing 123")
         data_after_post = user.notes
         self.assertEquals(len(data_before_post) + 1, len(data_after_post))
-        return note
+        note.delete()
 
     def test_edit_note(self):
         # Verify editing a note.
@@ -80,8 +80,15 @@ class TestCatchAPI(unittest.TestCase):
     def test_delete_note(self):
         # Verify deleting a note.
         u = self.login()
-        n = self.test_post_note(user=u)
+        n = u.post_note(text="test_delete_note")
         data_before_delete = u.notes
         n.delete()
         self.failUnless(n.deleted)
         self.assertEquals(len(data_before_delete) -1, len(u.notes))
+
+    def test_media(self):
+        u = self.login()
+        n = u.post_note(text="test_media")
+        m = n.add_media(os.path.join(os.path.dirname(__file__), 'catch_logo.png'))
+        m.delete()
+        self.failUnless(m.deleted)
