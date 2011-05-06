@@ -109,6 +109,28 @@ class Media(dict):
             self._deleted = True
             return True
 
+class Comment(dict):
+
+    def __init__(self, user, session, note, *args, **kwds):
+        self._user = user
+        self._session = session
+        self._note = note
+        super(Comment, self).__init__(*args, **kwds)
+
+    @property
+    def deleted(self):
+        return self._deleted
+
+    def delete(self):
+        data = self._session._request("DELETE", "/v2/comment/%s.json" % self['id'],
+                                      body={"access_token": self._user.access_token})
+        # not quite ready for this...
+        # "server_modified_at": self['server_modified_at']})
+        if data['status'] == 'ok':
+            self._note['comments'] = (c for c in self._note._comments if c is not self)
+            self._deleted = True
+            return True
+
 class Note(dict):
 
     def __init__(self, user, session, *args, **kwds):
@@ -127,6 +149,23 @@ class Note(dict):
                                body={"access_token": self._user.access_token,
                                      "server_modified_at": self['server_modified_at']})
         self._deleted = True
+
+    def add_comment(self, **opts):
+        data = self._session._request("POST",
+                                      "/v2/comments/{id}.json?access_token={token}".format(
+                                          id=self['id'],
+                                          token=self._user.access_token),
+                                      body=opts)
+        return Comment(self._user, self._session, self, data['notes'][0])
+
+    @property
+    def comments(self):
+        if not hasattr(self, "_comments"):
+            data = self._session._request("GET",
+                                          "/v2/comments/{id}.json".format(id=self['id']),
+                                          body={"access_token": self._user.access_token})
+            self._comments = [Comment(self._user, self._session, self, c) for c in data['notes']]
+        return self._comments
 
     def edit(self, **kwds):
         kwds.setdefault('server_modified_at', self['server_modified_at'])

@@ -31,18 +31,18 @@ class TestCatchAPI(unittest.TestCase):
         return self.api.login(username or self.__class__._username,
                               password or self.__class__._password)
 
-    def test_tags(self):
+    def zest_tags(self):
         tags = self.login().tags
         self.failUnless(tags)
         self.failUnless(isinstance(tags, tuple))
 
-    def test_notes_property(self):
+    def zest_notes_property(self):
         # Verify that .notes returns a list of notes greater than 0 from test account with notes in it.
         notes = self.login().notes
         assert len(notes) > 0
         return notes
 
-    def test_get_note(self):
+    def zest_get_note(self):
         u = self.login()
         notes = u.notes
         note = notes.next()
@@ -50,14 +50,14 @@ class TestCatchAPI(unittest.TestCase):
         self.assertEquals(note['text'], u.get_note(note['id'])['text'])
         return note
 
-    def test_get_notes(self):
+    def zest_get_notes(self):
         # Verify that get_notes returns a list of notes greater than 0 from test account with notes in it.
         u = self.login()
         notes, count = u.get_notes()
         self.failUnless(len(notes))
         return notes, count
 
-    def test_post_note(self, user=None):
+    def zest_post_note(self, user=None):
         # Verify posting a note.
         user = user or self.login()
         data_before_post = user.notes
@@ -67,7 +67,7 @@ class TestCatchAPI(unittest.TestCase):
         self.assertEquals(len(data_before_post) + 1, len(data_after_post))
         note.delete()
 
-    def test_edit_note(self):
+    def zest_edit_note(self):
         # Verify editing a note.
         u = self.login()
         note = u.post_note("test edit")
@@ -77,7 +77,7 @@ class TestCatchAPI(unittest.TestCase):
         self.assertEquals(u.get_note(note['id'])['text'], note['text'])
         note.delete()
 
-    def test_delete_note(self):
+    def zest_delete_note(self):
         # Verify deleting a note.
         u = self.login()
         n = u.post_note(text="test_delete_note")
@@ -86,9 +86,19 @@ class TestCatchAPI(unittest.TestCase):
         self.failUnless(n.deleted)
         self.assertEquals(len(data_before_delete) -1, len(u.notes))
 
-    def test_media(self):
+    def zest_media(self):
         u = self.login()
         n = u.post_note(text="test_media")
         m = n.add_media(os.path.join(os.path.dirname(__file__), 'catch_logo.png'))
         m.delete()
+        n.delete()
         self.failUnless(m.deleted)
+
+    def test_comments(self):
+        u = self.login()
+        n = u.post_note(text="test_comments")
+        c = n.add_comment(text="a comment")
+        self.assertEquals(c['text'], 'a comment')
+        self.assertEquals(len(n.comments), 1)
+        c.delete()
+        n.delete()
